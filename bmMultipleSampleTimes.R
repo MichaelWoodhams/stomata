@@ -1,11 +1,14 @@
 library(ape)
 library(TreeSim)
+setwd("/home/mdw2/Documents/botany/stomata/code")
+dyn.load('tree_climb.so')
 
 #let's see if we can write a version of what BM option of rTraitCont does
 #code here is adapted from rTraitCont and the C function that it calls
 set.seed(123)
 
 REPS = 1000
+#REPS = 10 # debugging
 root.value = 0 #starting value for the trait arbitrarily set to zero
 numtips = 1700 #this is set to match what is known about Proteaceae
 #might want to play with next two
@@ -115,7 +118,7 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1)
   list(tree = res, samples = test$samples, n.leaves = n.leaves, sampleTimes = sampleTimes)
 }
 
-dyn.load('tree_climb.dll')
+#dyn.load('tree_climb.dll')
 
 for (bdratio in bdratio_values){
   print(paste('BD RATIO', bdratio))
@@ -153,7 +156,7 @@ for (bdratio in bdratio_values){
   write.table(results, file = filename, quote=FALSE, row.names=FALSE)
 }
 
-dyn.unload('tree_climb.dll')
+#dyn.unload('tree_climb.dll')
 
 ## plot the last tree coloured by traits
 #palette(rainbow(1024)[1:700])

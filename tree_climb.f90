@@ -1,5 +1,22 @@
-! cd "C:\Users\beetonn\Desktop\Jordan and Holland postdoc"
-! "C:\Program Files\R\R-3.3.0\bin\R.exe" CMD SHLIB tree_climb.f90
+
+! rand_normal: return a normally distributed random number with mean 0, variance 1.
+! This uses the Box-Muller tranform. We could get a second normal random number
+! for little effort, but we don't bother to do so.
+! 'rands' is just pre-allocated memory. It changes, but value isn't expected to be
+! used outside this function.
+! Result is returned in rand_var. This should be a function, but I'm modifying someone
+! else's code and haven't used Fortran since Fortran 77, and haven't figured out
+! how to define the return type of the function when I'm not inside a 'program' block.
+! Yay for cargo cult programming!
+
+subroutine rand_normal(rands, rand_var)
+  double precision, dimension(2) :: rands
+  double precision, intent(OUT) :: rand_var
+  double precision, parameter :: pi = 3.1415926535879
+
+  call random_number(rands)
+  rand_var=sqrt(-2.0*log(rands(1)))*cos(2.0*pi*rands(2))
+end subroutine rand_normal
 
 ! n.edge = n + n.events - 2
 ! res = tree.climb(1, 1, matrix(0, n.edge, 2), numeric(n.edge))
@@ -8,7 +25,7 @@
 ! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws
 
 recursive subroutine tree_climb(n, n_events, leaves, changes, changer, nodes, times, time, a,&
-edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws)
+edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, theta, ws)
 
   implicit none
   integer, intent(IN) :: n, n_events, time, n_samples, n_leaves, ml
@@ -19,12 +36,11 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   integer :: a, place, newtime, tmpws, ws, ows
   integer, dimension(n + n_events - 2, 2) :: edge
 
-  double precision, intent(IN) :: sigma
+  double precision, intent(IN) :: sigma, theta
   double precision, dimension(n_events), intent(IN) :: times
   double precision, dimension(n_samples), intent(IN) :: t_el
 
-  double precision, parameter :: pi = 3.1415926535879
-  double precision :: time_in, tmptrait, trait, otrait, sumtime
+  double precision :: time_in, tmptrait, trait, otrait, sumtime, rand_var
   double precision, dimension(2) :: rands
   double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
   double precision, dimension(ml, n_samples) :: samples
@@ -39,8 +55,10 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
   if (ws <= n_samples) then
     do while (time == se(ws))
-      call random_number(rands)
-      trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
+      call rand_normal(rands,rand_var)
+      trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+      !call random_number(rands)
+      !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
       !write(12,*) place, ws, trait, "straight_in"
       samples(place, ws) = trait
                 !write(12,*) samples(place,ws)
@@ -62,8 +80,10 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   
       if (ws <= n_samples) then
         do while (newtime == se(ws))
-          call random_number(rands)
-          trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
+          call rand_normal(rands,rand_var)
+          trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+          !call random_number(rands)
+          !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
           !write(12,*) place, ws, trait, "along"
           samples(place, ws) = trait
                     !write(12,*) samples(place,ws)
@@ -80,8 +100,10 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   endif
   
   edge_length(a) = sum(times((time + 1):newtime)) ! sumtime (doesn't include time to samples)
-  call random_number(rands)
-  trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
+  call rand_normal(rands,rand_var)
+  trait = trait + sigma * sqrt(sumtime) * rand_var
+  !call random_number(rands)
+  !trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
   edge_trait(a) = trait
     
   if (newtime < n_events) then
@@ -94,7 +116,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
       ! arguments: n, n_events, leaves, changes, changer, nodes, times, time, a,&
       ! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws
       call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newtime, a, edge,&
-      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, tmpws)
+      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpws)
     endif
   else
     edge(a,:) = (/ nodes(time), place /)
@@ -109,8 +131,10 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
   if (ws <= n_samples) then
     do while (time == se(ws))
-      call random_number(rands)
-      trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
+      call rand_normal(rands,rand_var)
+      trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+      !call random_number(rands)
+      !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
       !write(12,*) place, ws, trait, "straight_in"
       samples(place, ws) = trait
                 !write(12,*) samples(place,ws)
@@ -129,8 +153,10 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
       if (ws <= n_samples) then  
         do while (newtime == se(ws))
-          call random_number(rands)
-          trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
+          call rand_normal(rands,rand_var)
+          trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+          !call random_number(rands)
+          !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
           !write(12,*) place, ws, trait, "along"
           samples(place, ws) = trait
           !write(12,*) samples(place,ws)
@@ -147,8 +173,10 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   endif
 
   edge_length(a) = sum(times((time + 1):newtime)) ! sumtime (doesn't include time to samples)
-  call random_number(rands)
-  trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
+  call rand_normal(rands,rand_var)
+  trait = trait + sigma * sqrt(sumtime) * rand_var
+  !call random_number(rands)
+  !trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
   edge_trait(a) = trait
 
   if (newtime < n_events) then
@@ -160,7 +188,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
       ! arguments: n, n_events, leaves, changes, changer, nodes, times, time, a,&
       ! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws
       call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newtime, a, edge,&
-      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, tmpws)
+      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpws)
     endif
   else
     edge(a,:) = (/ nodes(time), place /) 
