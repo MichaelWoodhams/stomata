@@ -13,6 +13,7 @@ root.value = 0 #starting value for the trait arbitrarily set to zero
 numtips = 1700 #this is set to match what is known about Proteaceae
 #might want to play with next two
 bdratio_values = c(1.1, 1.5, 2, 5, 10, 20, 50, 100)
+theta_values = c(0,0.1,0.5,1)
 sigma = 1
 
 
@@ -28,7 +29,7 @@ numSamplePoints = length(fossil.ages)
 numfossils=c(2, 2, 2, 13, 1 , 17, 4, 2, 20, 7, 13, 5, 4, 3, 2, 12) 
 numfossils  <- numfossils[length(numfossils):1]
 
-fast.tree = function(n, lambda=1, mu=1, sigma = 1)
+fast.tree = function(n, lambda=1, mu=1, sigma = 1, theta = 0)
 {
   # start off doing things in reverse 
   # (start with n extant species, create species at rate mu, destroy at rate lambda)
@@ -105,6 +106,7 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1)
                   samples = matrix(as.double(0.0), max.leaves, n.samples),
                   trait = 0.0, #numeric(n + n_events - 2) # change value to change trait start
                   sigma = as.double(sigma),
+                  theta = as.double(theta),
                   ws = 1L
   )
   res = list(edge = test$edge, 
@@ -120,42 +122,44 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1)
 
 #dyn.load('tree_climb.dll')
 
-for (bdratio in bdratio_values){
-  print(paste('BD RATIO', bdratio))
-  rand.correlations = numeric(REPS)
-  rand.sds = numeric(REPS)
-  rand.sigma2 = numeric(REPS)
-  
-  for (reps in 1: REPS){
-    if (reps%%100 == 0) print(reps)
-    res = fast.tree(n = numtips, lambda = bdratio, mu = 1, sigma = sigma)
-    # output names: tree, samples, n.leaves, sampleTimes
+for (theta in theta_values) {
+  for (bdratio in bdratio_values){
+    print(sprintf("Theta: %f, BD Ratio: %f",theta,bdratio))
+    print(paste('BD RATIO', bdratio))
+    rand.correlations = numeric(REPS)
+    rand.sds = numeric(REPS)
+    rand.sigma2 = numeric(REPS)
     
-    node.trait = numeric(max(res$tree$edge[,2]))
-    node.trait[res$tree$edge[,2]] = res$tree$edge.trait
-    
-    #set up a list of lists to store the samples in
-    df <- NULL #this data frame will store samples ages and trait values 
-    
-    for (i in 1:numSamplePoints) {
-      theseSamples <- res$samples[1:res$n.leaves[i], i] #all the species at this time slice
-      theseFossils <- sample(theseSamples, numfossils[i], replace=TRUE) #replacement or not?
-      df <- rbind(df, cbind(theseFossils, res$sampleTimes[i]))
+    for (reps in 1: REPS){
+      if (reps%%100 == 0) print(reps)
+      res = fast.tree(n = numtips, lambda = bdratio, mu = 1, sigma = sigma)
+      # output names: tree, samples, n.leaves, sampleTimes
+      
+      node.trait = numeric(max(res$tree$edge[,2]))
+      node.trait[res$tree$edge[,2]] = res$tree$edge.trait
+      
+      #set up a list of lists to store the samples in
+      df <- NULL #this data frame will store samples ages and trait values 
+      
+      for (i in 1:numSamplePoints) {
+        theseSamples <- res$samples[1:res$n.leaves[i], i] #all the species at this time slice
+        theseFossils <- sample(theseSamples, numfossils[i], replace=TRUE) #replacement or not?
+        df <- rbind(df, cbind(theseFossils, res$sampleTimes[i]))
+      }
+      
+      #data frame containing the correlation between random values and zachos
+      #each row corresponds to an individual sample
+      rand.correlations[reps] = cor(df[ ,1], zachos)
+      rand.sds[reps] = sd(df[,1])
+      # normalised sigma = tree length / sd@tips
+      rand.sigma2[reps] = max(node.depth.edgelength(res$tree))/sd(node.trait[1:numtips])^2
     }
     
-    #data frame containing the correlation between random values and zachos
-    #each row corresponds to an individual sample
-    rand.correlations[reps] = cor(df[ ,1], zachos)
-    rand.sds[reps] = sd(df[,1])
-    # normalised sigma = tree length / sd@tips
-    rand.sigma2[reps] = max(node.depth.edgelength(res$tree))/sd(node.trait[1:numtips])^2
+    results <- data.frame(rand.corr = rand.correlations, rand.sd = rand.sds, rand.sigma2 = rand.sigma2)
+    filename = paste("results", bdratio, theta, REPS, ".txt", sep="_")
+    write.table(results, file = filename, quote=FALSE, row.names=FALSE)
   }
-  
-  results <- data.frame(rand.corr = rand.correlations, rand.sd = rand.sds, rand.sigma2 = rand.sigma2)
-  filename = paste("results", bdratio, REPS, "new.txt", sep="_")
-  write.table(results, file = filename, quote=FALSE, row.names=FALSE)
 }
-
 #dyn.unload('tree_climb.dll')
 
 ## plot the last tree coloured by traits
@@ -172,16 +176,17 @@ for (bdratio in bdratio_values){
 teststat <- cor(zachos, gcl)
 
 #process results of random correlation sims
-for (bdratio in bdratio_values){
-  filename = paste("results", bdratio, REPS, "new.txt", sep="_")
-  simres <- read.table(file=filename, header=TRUE)
-  print(paste('bdratio',bdratio))
-  print(paste('p = ', sum(abs(simres$rand.corr) > abs(teststat), na.rm = TRUE), '/', sum(!is.na(simres$rand.corr))))
-  print(paste('overlap = ', sum(dnorm(simres$rand.sigma2, 1.181, 0.1983), na.rm = TRUE) ))
-  print('')
-#  print(summary(simres))
-  tmp = hist(simres$rand.sigma2, 100, main = paste('bdratio = ', bdratio)); abline(v = 1.181)
-  lines(seq(0.5,3,0.01), dnorm(seq(0.5,3,0.01), 1.181, 0.1983)*max(tmp$counts)/dnorm(0,0,0.1983), col='red')
-  Sys.sleep(2)
+for (theta in theta_values) {
+  for (bdratio in bdratio_values){
+    filename = paste("results", bdratio, theta, REPS, ".txt", sep="_")
+    simres <- read.table(file=filename, header=TRUE)
+    print(sprintf('Theta %f, bdratio %f',theta, bdratio))
+    print(paste('p = ', sum(abs(simres$rand.corr) > abs(teststat), na.rm = TRUE), '/', sum(!is.na(simres$rand.corr))))
+    print(paste('overlap = ', sum(dnorm(simres$rand.sigma2, 1.181, 0.1983), na.rm = TRUE) ))
+    print('')
+  #  print(summary(simres))
+    tmp = hist(simres$rand.sigma2, 100, main = paste('bdratio = ', bdratio)); abline(v = 1.181)
+    lines(seq(0.5,3,0.01), dnorm(seq(0.5,3,0.01), 1.181, 0.1983)*max(tmp$counts)/dnorm(0,0,0.1983), col='red')
+    Sys.sleep(2)
+  }
 }
-

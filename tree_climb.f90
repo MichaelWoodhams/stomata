@@ -1,22 +1,42 @@
+! Compile file with
+! R CMD SHLIB tree_climb.f90
 
-! rand_normal: return a normally distributed random number with mean 0, variance 1.
-! This uses the Box-Muller tranform. We could get a second normal random number
-! for little effort, but we don't bother to do so.
-! 'rands' is just pre-allocated memory. It changes, but value isn't expected to be
-! used outside this function.
-! Result is returned in rand_var. This should be a function, but I'm modifying someone
-! else's code and haven't used Fortran since Fortran 77, and haven't figured out
-! how to define the return type of the function when I'm not inside a 'program' block.
-! Yay for cargo cult programming!
 
-subroutine rand_normal(rands, rand_var)
+! update_trait randomly updates a trait according to an Ornstein-Uhlenbeck
+! process with mean 0.
+!  trait: the value to be updated (value of variable changes)
+!  deltat: time period between old and updated trait
+!  sigma: random drift speed
+!  theta: OU process parameter. High theta means values decay quickly towards 0
+!  rands: just for pre-allocated memory. Mostly kept for sake of
+!         minimizing changes to old code.
+
+subroutine update_trait(trait, deltat, sigma, theta, rands)
+  double precision, intent(INOUT) :: trait
+  double precision, intent(IN) :: deltat, sigma, theta
   double precision, dimension(2) :: rands
-  double precision, intent(OUT) :: rand_var
   double precision, parameter :: pi = 3.1415926535879
-
+  double precision :: rand_var
+  
+  ! Generate N(0,1) random_var by the Box-Muller tranform.
+  ! We could get a second normal random number
+  ! for little effort, but we don't bother to do so.
   call random_number(rands)
   rand_var=sqrt(-2.0*log(rands(1)))*cos(2.0*pi*rands(2))
-end subroutine rand_normal
+
+  if (theta==0) then
+    ! For theta=0, OU process becomes just Brownian motion
+    trait = trait + sigma * sqrt(deltat) * rand_var
+ else
+    ! Ornstein-Uhlenbeck process value x at time t
+    ! given value was x' at (earlier) time t' is normally distributed
+    ! with mean x' exp(-theta(t-t')) and variance
+    ! sigma^2/(2 theta)(1-exp(-2 theta(t-t')))
+    ! Here x' - old 'trait' value, t-t' = deltat.
+    trait = trait*exp(-theta*deltat) + &
+            sigma*sqrt((1-exp(-2*theta*deltat))/(2*theta))*rand_var
+ endif
+end subroutine update_trait
 
 ! n.edge = n + n.events - 2
 ! res = tree.climb(1, 1, matrix(0, n.edge, 2), numeric(n.edge))
@@ -55,8 +75,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
   if (ws <= n_samples) then
     do while (time == se(ws))
-      call rand_normal(rands,rand_var)
-      trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+      call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
       !call random_number(rands)
       !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
       !write(12,*) place, ws, trait, "straight_in"
@@ -80,8 +99,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   
       if (ws <= n_samples) then
         do while (newtime == se(ws))
-          call rand_normal(rands,rand_var)
-          trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+          call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
           !call random_number(rands)
           !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
           !write(12,*) place, ws, trait, "along"
@@ -100,8 +118,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   endif
   
   edge_length(a) = sum(times((time + 1):newtime)) ! sumtime (doesn't include time to samples)
-  call rand_normal(rands,rand_var)
-  trait = trait + sigma * sqrt(sumtime) * rand_var
+  call update_trait(trait, sumtime, sigma, theta, rands)
   !call random_number(rands)
   !trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
   edge_trait(a) = trait
@@ -131,8 +148,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
   if (ws <= n_samples) then
     do while (time == se(ws))
-      call rand_normal(rands,rand_var)
-      trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+      call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
       !call random_number(rands)
       !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
       !write(12,*) place, ws, trait, "straight_in"
@@ -153,8 +169,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
       if (ws <= n_samples) then  
         do while (newtime == se(ws))
-          call rand_normal(rands,rand_var)
-          trait = trait + sigma * sqrt(t_el(ws) - time_in) * rand_var
+          call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
           !call random_number(rands)
           !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
           !write(12,*) place, ws, trait, "along"
@@ -173,8 +188,7 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   endif
 
   edge_length(a) = sum(times((time + 1):newtime)) ! sumtime (doesn't include time to samples)
-  call rand_normal(rands,rand_var)
-  trait = trait + sigma * sqrt(sumtime) * rand_var
+  call update_trait(trait, sumtime, sigma, theta, rands)
   !call random_number(rands)
   !trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
   edge_trait(a) = trait
