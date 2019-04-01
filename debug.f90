@@ -2,40 +2,150 @@
 
 program debug
   implicit none
-  integer, parameter :: n=5 ! number of live tips of tree
-  integer, parameter :: n_events=17 ! number of speciation/extinction events.
-  integer, dimension(n_events) :: leaves = [1,2,3,2,3,4,5,6,5,4,5,4,5,6,5,4,5]
-  integer, dimension(n_events-1) :: changes = [1,1,-1,1,1,1,1,-1,-1,1,-1,1,1,-1,-1,1]
-  integer, dimension(n_events) :: changer = [1,2,1,1,3,4,5,2,1,3,4,1,2,3,1,1,5]
-  integer, dimension(n_events) :: nodes = [12,13,11,14,15,16,17,10,9,18,8,19,20,7,6,21,0]
-  double precision, dimension(n_events) :: times = &
-       [0.236686751,0.288092867,0.349368826,0.355765762,0.182190466,&
-        0.087765656,0.190416062,0.110437159,0.016545403,0.038370095,&
-        0.089007730,0.005424049,0.090686383,0.002863372,0.060970358,&
-        0.121784159,0.107278600]
-  integer :: time=1
-  integer :: a=1
+  integer :: n ! number of live tips of tree
+  integer :: n_events ! number of speciation/extinction events.
+  integer, dimension(:), allocatable :: leaves ! len n_events
+  integer, dimension(:), allocatable :: changes ! len n_events-1
+  integer, dimension(:), allocatable :: changer ! len n_events
+  integer, dimension(:), allocatable :: nodes ! len n_events
+  double precision, dimension(:), allocatable :: times ! len n_events
+  integer :: time
+  integer :: a
   ! Initialize with nonsense values. I'd use NaN, but Fortran doesn't make this easy.
-  integer, dimension(n + n_events - 2, 2) :: edge=-1
-  double precision, dimension(n + n_events - 2) :: edge_length=-1 
-  double precision, dimension(n + n_events - 2) :: edge_trait=-10000
-  integer, parameter :: n_samples=16
-  integer, dimension(n_samples) :: se=[3,3,3,3,4,4,4,5,6,6,6,6,7,10,10,12]
+  integer, dimension(:,:), allocatable :: edge ! dim (n+n_events-2,2)
+  double precision, dimension(:), allocatable :: edge_length ! len n+n_events-2
+  double precision, dimension(:), allocatable :: edge_trait ! len n+n_events-2
+  integer :: n_samples ! =16 normally. Number of times at which to sample
+  integer, dimension(:), allocatable :: se ! len n_samples
   integer :: n_leaves = -1000  ! test my theory this is never used.
-  integer, parameter :: ml = 6
-  double precision, dimension(n_samples) :: t_el = &
-       [0.19681548,0.30955564,0.33210367,0.35465170,0.04398200, &
-        0.08907807,0.13417413,0.01962776,0.06715029,0.08969832, &
-        0.11224635,0.15734242,0.10221455,0.02705402,0.07215008,0.04536240]
-  double precision, dimension(ml, n_samples) :: samples=-10000
-  double precision :: trait = 0.0
-  double precision :: sigma = 1.0
-  double precision :: theta = 0.0
-  integer :: ws = 1
- 
+  integer :: ml ! max number of leaves at any time. Typically equal or slightly bigger than n
+  double precision, dimension(:), allocatable :: t_el ! len n_samples
+  double precision, dimension(:,:),allocatable :: samples ! dim(ml,n_samples)
+  double precision :: trait 
+  double precision :: sigma 
+  double precision :: theta 
+  integer :: ws 
+  integer :: i, j
+  integer, allocatable :: seed(:)
+  character (len=20) :: string
+
+  ! Seed RNG. Will later reuse n for something else.
+  call random_seed(size = n)
+  allocate(seed(n))
+  seed = [(i,i=1,n)]
+  call random_seed(put=seed)
+  
+  open(10,file='R_output.txt')
+  read(10,*) n
+  read(10,*) n_events
+  read(10,*) n_samples  
+  read(10,*) sigma
+  read(10,*) theta
+
+  read(10,*) string
+  if (string /= "changes") then
+    stop "changes not found"
+  end if
+  allocate(changes(n_events-1))
+  do i=1,n_events-1
+     read(10,*) changes(i)
+  end do
+
+  read(10,*) string
+  if (string /= "changer") then
+    stop "changer not found"
+  end if
+  allocate(changer(n_events))
+  do i=1,n_events
+     read(10,*) changer(i)
+  end do
+
+  read(10,*) string
+  if (string /= "nodes") then
+    stop "nodes not found"
+  end if
+  allocate(nodes(n_events))
+  do i=1,n_events
+     read(10,*) nodes(i)
+  end do
+  
+  read(10,*) string
+  if (string /= "se") then
+    stop "se not found"
+  end if
+  allocate(se(n_samples))
+  do i=1,n_samples
+     read(10,*) se(i)
+  end do
+
+  read(10,*) string
+  if (string /= "times") then
+    stop "times not found"
+  end if
+  allocate(times(n_events))
+  do i=1,n_events
+     read(10,*) times(i)
+  end do
+
+  read(10,*) string
+  if (string /= "t_el") then
+    stop "t_el not found"
+  end if
+  allocate(t_el(n_samples))
+  do i=1,n_samples
+     read(10,*) t_el(i)
+  end do
+
+  close(10) 
+
+  ml=0
+  allocate(leaves(n_events))
+  leaves(1)=1
+  do i=2,n_events
+     leaves(i)=leaves(i-1)+changes(i-1)
+     ml=max(ml,leaves(i))
+  end do
+
+  allocate(edge(n+n_events-2,2))
+  allocate(edge_length(n+n_events-2))
+  allocate(edge_trait(n+n_events-2))
+  allocate(samples(ml,n_samples))
+  ! Initialize to nonsense values
+  edge=-1
+  edge_length=-1
+  edge_trait=-100
+  samples=-100
+
+  time=1
+  a=1
+  trait=0.0
+  ws=1
+
   call tree_climb(n, n_events, leaves, changes, changer, nodes, times, &
        time, a, edge, edge_length, edge_trait, n_samples, se, n_leaves, &
        ml, t_el, samples, trait, sigma, theta, ws)
+
+  open(20,file="f95out.txt",action='write')
+  write(20,*) "edge"
+  do i=1,n+n_events-2
+     write(20,"(2I6)") edge(i,1), edge(i,2)
+  end do
+  write(20,*) "edge_length"
+  do i=1,n_events-2
+     write(20,"(F10.7)") edge_length(i)
+  end do
+  write(20,*) "edge_trait"
+  do i=1,n_events-2
+     write(20,"(F10.5)") edge_trait(i)
+  end do
+  write(20,*) "samples"
+  do i=1,ml
+     do j=1,n_samples
+        write(20,"(F10.4)",advance='no') samples(i,j)
+     end do
+     write(20,*)
+  end do
+  close(20)
 
 end program
 
