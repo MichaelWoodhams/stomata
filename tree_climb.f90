@@ -38,6 +38,27 @@ subroutine update_trait(trait, deltat, sigma, theta, rands)
  endif
 end subroutine update_trait
 
+! Refactoring, copying repeated code into a subroutine.
+! It looks like this is 'now we've reached a sample time, generate then copy
+! all trait values into 'samples'.
+subroutine update_samples(ws, n_samples, ml, time, se, trait, t_el, &
+  time_in, sigma, theta, rands, samples, place)
+
+  implicit none
+  integer, intent(INOUT) :: ws
+  integer, intent(IN) :: n_samples, ml, time, place, se(n_samples)
+  double precision, intent(INOUT) :: trait, time_in, rands(2), samples(ml,n_samples)
+  double precision, intent(IN) :: sigma, theta, t_el(n_samples)
+  
+  do while (ws <= n_samples .and. time == se(ws))
+     call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
+     samples(place, ws) = trait
+     time_in = t_el(ws)
+     ws = ws + 1
+  enddo
+end subroutine update_samples
+
+
 ! n.edge = n + n.events - 2
 ! res = tree.climb(1, 1, matrix(0, n.edge, 2), numeric(n.edge))
 
@@ -65,26 +86,14 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
   double precision, dimension(ml, n_samples) :: samples
 
-  !open(12, file="test.txt", status="old", position="append", action="write")
-! write(12,*) time, ws, trait
-!  write(12,*) samples(1,1), samples(442,15), samples(442,1), "start"
   ows = ws
   otrait = trait
   time_in = 0.0
   place = changer(time)
 
   if (ws <= n_samples) then
-    do while (time == se(ws))
-      call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
-      !call random_number(rands)
-      !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
-      !write(12,*) place, ws, trait, "straight_in"
-      samples(place, ws) = trait
-                !write(12,*) samples(place,ws)
-      time_in = t_el(ws)
-      ws = ws + 1
-      if (ws > n_samples) exit      
-    enddo
+     call update_samples(ws, n_samples, ml, time, se, trait, t_el, &
+                         time_in, sigma, theta, rands, samples, place)
   endif
   
   newtime = time + 1
@@ -98,17 +107,8 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
       time_in = 0.0
   
       if (ws <= n_samples) then
-        do while (newtime == se(ws))
-          call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
-          !call random_number(rands)
-          !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
-          !write(12,*) place, ws, trait, "along"
-          samples(place, ws) = trait
-                    !write(12,*) samples(place,ws)
-          time_in = t_el(ws)
-          ws = ws + 1
-          if (ws > n_samples) exit
-        enddo
+         call update_samples(ws, n_samples, ml, newtime, se, trait, t_el, &
+                             time_in, sigma, theta, rands, samples, place)
       endif
       
       newtime = newtime + 1
@@ -119,8 +119,6 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   
   edge_length(a) = sum(times((time + 1):newtime)) ! sumtime (doesn't include time to samples)
   call update_trait(trait, sumtime, sigma, theta, rands)
-  !call random_number(rands)
-  !trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
   edge_trait(a) = trait
     
   if (newtime < n_events) then
@@ -130,8 +128,6 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
       a = a + 1
       tmpws = ws
       tmptrait = trait
-      ! arguments: n, n_events, leaves, changes, changer, nodes, times, time, a,&
-      ! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws
       call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newtime, a, edge,&
       edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpws)
     endif
@@ -147,17 +143,8 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   place = changer(time) + 1
 
   if (ws <= n_samples) then
-    do while (time == se(ws))
-      call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
-      !call random_number(rands)
-      !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
-      !write(12,*) place, ws, trait, "straight_in"
-      samples(place, ws) = trait
-                !write(12,*) samples(place,ws)
-      time_in = t_el(ws)
-      ws = ws + 1
-      if (ws > n_samples) exit
-    enddo
+     call update_samples(ws, n_samples, ml, time, se, trait, t_el, &
+                         time_in, sigma, theta, rands, samples, place)
   endif
   
   newtime = time + 1
@@ -167,18 +154,9 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
       if (changer(newtime) < place) place = place + changes(newtime)
       time_in = 0.0
 
-      if (ws <= n_samples) then  
-        do while (newtime == se(ws))
-          call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
-          !call random_number(rands)
-          !trait = trait + sigma * sqrt(-2.0*(t_el(ws) - time_in)*log(rands(1)))*cos(2.0*pi*rands(2))
-          !write(12,*) place, ws, trait, "along"
-          samples(place, ws) = trait
-          !write(12,*) samples(place,ws)
-          time_in = t_el(ws)
-          ws = ws + 1
-          if (ws > n_samples) exit          
-        enddo
+      if (ws <= n_samples) then
+         call update_samples(ws, n_samples, ml, newtime, se, trait, t_el, &
+                             time_in, sigma, theta, rands, samples, place)
       endif
 
       newtime = newtime + 1
@@ -189,8 +167,6 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
 
   edge_length(a) = sum(times((time + 1):newtime)) ! sumtime (doesn't include time to samples)
   call update_trait(trait, sumtime, sigma, theta, rands)
-  !call random_number(rands)
-  !trait = trait + sigma * sqrt(-2.0*sumtime*log(rands(1)))*cos(2.0*pi*rands(2))
   edge_trait(a) = trait
 
   if (newtime < n_events) then
@@ -199,17 +175,12 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
       a = a + 1
       tmpws = ws
       tmptrait = trait
-      ! arguments: n, n_events, leaves, changes, changer, nodes, times, time, a,&
-      ! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws
       call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newtime, a, edge,&
       edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpws)
     endif
   else
     edge(a,:) = (/ nodes(time), place /) 
   endif
-
-!  write(12,*) samples(1,1), samples(442,15), samples(442,1), "end"
-!  close(12)
 
 end subroutine
 
