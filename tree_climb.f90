@@ -3,23 +3,28 @@
 
 ! Glossary of variables:
 
-! "Event" construct: an ordered sequence of event, each of which is
+! "Events" construct: an ordered sequence of event, each of which is
 ! a speciation or extinction at a particular node on the tree.
-! ??? First event is speciation at root of tree??? Or final event is end of
-! tree???
+!   event 0 is the root of the tree, always a speciation.
+!   even n_events is the end of time, where extant tree tips live.
 !
 ! n_events, const integer: number of events
 ! changes, const integer(n_events-1): changes(event-1) = +1 if speciation,
-!      -1 if extinction event. ??? omits root???
+!      -1 if extinction event. (No record for final event, as that is
+!      just the end of time.)
 ! changer, const integer(n_events): The 'place' at which extinction/speciation
 !      occurs.
 ! leaves, const integer(n_events): The number of leaves present at
-!      (before? after?) each event. Is cumulative sum of 'changes'
+!      immediately before each event. Is cumulative sum of 'changes'
 ! nodes, const integer(n_events): node identifier number for the node
-!      which is where this event happens.
-! times, const double(n_events): clock time between each event
-! event, integer: index into events
-! newevent, integer: index into events
+!      which is where this event happens. (Final leaves have node
+!      numbers 1...n. These are not represented in nodes array.)
+! times, const double(n_events): clock time prior to each event
+!      i.e. times(i) is interval between event i-1 and event i.
+! event, integer: index into events. The root event for which each call
+!      to tree_climb is processing the descendents of.
+! newevent, integer: index into events, advanced as we traverse each
+!      edge.
 !
 ! "Edge" construct: a set of tree edges with properties.
 ! n, const integer: number of tips on tree.
@@ -27,8 +32,8 @@
 ! edge, integer(n+n_events-2,2): parent/child node numbers for each edge.
 !     We fill this in as we go.
 ! edge_length, double(n+n_events-2): length of edge
-! edge_trait, double(n+n_events-2): trait at end??? of edge
-! a, integer: indexes edge arrays. Starts at 1 and increments everytime a
+! edge_trait, double(n+n_events-2): trait at end of edge
+! thisEdge, integer: indexes edge arrays. Starts at 1 and increments everytime a
 !     new edge is encountered
 !
 ! "Sample" construct. We have several sample times, at which we want
@@ -40,11 +45,12 @@
 !      at given sample time, for edge 'place' from left at that slice through
 !      tree.
 ! se, const integer(n_samples): event number immediately preceeding sample time
-! t_el, const double(n_samples): t_el(ws) is clock time between most recent
-!      event (number se(ws)) and sample time.
-! ws, integer: ?? most recent sample time which we have passed
-! ows
-! tempws
+! t_el, const double(n_samples): t_el(nextSample) is clock time between most recent
+!      event (number se(nextSample)) and sample time.
+! nextSample, integer: the next sampling time we will meet, i.e. earliest sampling
+!    time we have not already passed.
+! onextSample, integer: stores old nextSample
+! tempnextSample, integer: used to prevent nextSample being overwritten.
 !
 ! Others:
 ! 
@@ -108,22 +114,22 @@ end subroutine update_trait
 ! advance clock to last of those sample times, and record
 ! the trait values on the current edge.
 ! Else do nothing.
-! ws, time_in can change (increase).
+! nextSample, time_in can change (increase).
 
-subroutine advance_to_sample_time(ws, n_samples, ml, event, se, trait, t_el, &
+subroutine advance_to_sample_time(nextSample, n_samples, ml, event, se, trait, t_el, &
   time_in, sigma, theta, rands, samples, place)
 
   implicit none
-  integer, intent(INOUT) :: ws
+  integer, intent(INOUT) :: nextSample
   integer, intent(IN) :: n_samples, ml, event, place, se(n_samples)
   double precision, intent(INOUT) :: trait, time_in, rands(2), samples(ml,n_samples)
   double precision, intent(IN) :: sigma, theta, t_el(n_samples)
   
-  do while (ws <= n_samples .and. event == se(ws))
-     call update_trait(trait, t_el(ws)-time_in, sigma, theta, rands)
-     samples(place, ws) = trait
-     time_in = t_el(ws)
-     ws = ws + 1
+  do while (nextSample <= n_samples .and. event == se(nextSample))
+     call update_trait(trait, t_el(nextSample)-time_in, sigma, theta, rands)
+     samples(place, nextSample) = trait
+     time_in = t_el(nextSample)
+     nextSample = nextSample + 1
   enddo
 end subroutine advance_to_sample_time
 
@@ -131,11 +137,11 @@ end subroutine advance_to_sample_time
 ! n.edge = n + n.events - 2
 ! res = tree.climb(1, 1, matrix(0, n.edge, 2), numeric(n.edge))
 
-! arguments: n, n_events, leaves, changes, changer, nodes, times, event, a,&
-! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, ws
+! arguments: n, n_events, leaves, changes, changer, nodes, times, event, thisEdge,&
+! edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, baseNextSample
 
-recursive subroutine tree_climb(n, n_events, leaves, changes, changer, nodes, times, event, a,&
-edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait, sigma, theta, ws)
+recursive subroutine tree_climb(n, n_events, leaves, changes, changer, nodes, times, event, thisEdge,&
+edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, baseTrait, sigma, theta, baseNextSample)
 
   implicit none
   integer, intent(IN) :: n, n_events, event, n_samples, n_leaves, ml
@@ -143,104 +149,99 @@ edge, edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, trait
   integer, dimension(n_events), intent(IN) :: leaves, changer, nodes
   integer, dimension(n_samples), intent(IN) :: se
 
-  integer :: a, place, newevent, tmpws, ws, ows
+  integer :: thisEdge, place, newevent, baseNextSample, tmpnextSample, nextSample
   integer, dimension(n + n_events - 2, 2) :: edge
 
   double precision, intent(IN) :: sigma, theta
   double precision, dimension(n_events), intent(IN) :: times
   double precision, dimension(n_samples), intent(IN) :: t_el
 
-  double precision :: time_in, tmptrait, trait, otrait, sumtime, rand_var
+  double precision :: time_in, tmptrait, trait, baseTrait, sumtime, rand_var
   double precision, dimension(2) :: rands
   double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
   double precision, dimension(ml, n_samples) :: samples
 
-  ows = ws
-  otrait = trait
+  nextSample = baseNextSample
+  trait = baseTrait
   time_in = 0.0
   place = changer(event)
 
-  call advance_to_sample_time(ws, n_samples, ml, event, se, trait, t_el, &
+  call advance_to_sample_time(nextSample, n_samples, ml, event, se, trait, t_el, &
                          time_in, sigma, theta, rands, samples, place)
 
   newevent = event + 1
   sumtime = times(newevent) - time_in
   time_in = 0.0
   
-  if (newevent < n_events) then
-    do while (place .ne. changer(newevent))
-      if (changer(newevent) < place) place = place + changes(newevent)
-      
-      time_in = 0.0
+  do while (place .ne. changer(newevent) .and. newevent < n_events )
+     if (changer(newevent) < place) place = place + changes(newevent)
+     
+     time_in = 0.0
+     
+     call advance_to_sample_time(nextSample, n_samples, ml, newevent, se, trait, t_el, &
+          time_in, sigma, theta, rands, samples, place)
+     
+     newevent = newevent + 1
+     sumtime = sumtime + times(newevent) - time_in
+  enddo
   
-      call advance_to_sample_time(ws, n_samples, ml, newevent, se, trait, t_el, &
-                             time_in, sigma, theta, rands, samples, place)
-      
-      newevent = newevent + 1
-      sumtime = sumtime + times(newevent) - time_in
-      if (newevent == n_events) exit
-    enddo
-  endif
-  
-  edge_length(a) = sum(times((event + 1):newevent)) ! sumtime (doesn't include time to samples)
+  edge_length(thisEdge) = sum(times((event + 1):newevent)) ! sumtime (doesn't include time to samples)
   call update_trait(trait, sumtime, sigma, theta, rands)
-  edge_trait(a) = trait
+  edge_trait(thisEdge) = trait
     
-  if (newevent < n_events) then
-    edge(a,:) = (/ nodes(event), nodes(newevent) /)
+  if (newevent == n_events) then
+    edge(thisEdge,:) = (/ nodes(event), place /)
+  else 
+    edge(thisEdge,:) = (/ nodes(event), nodes(newevent) /)
 
     if (changes(newevent) == 1) then
-      a = a + 1
-      tmpws = ws
+      thisEdge = thisEdge + 1
+      tmpnextSample = nextSample
       tmptrait = trait
-      call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newevent, a, edge,&
-      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpws)
+      call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newevent, thisEdge, edge,&
+      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpnextSample)
     endif
-  else
-    edge(a,:) = (/ nodes(event), place /)
   endif
   
-  a = a + 1
+  thisEdge = thisEdge + 1
 
-  ws = ows
-  trait = otrait
+  nextSample = baseNextSample
+  trait = baseTrait
   time_in = 0.0
   place = changer(event) + 1
 
-  call advance_to_sample_time(ws, n_samples, ml, event, se, trait, t_el, &
+  call advance_to_sample_time(nextSample, n_samples, ml, event, se, trait, t_el, &
                          time_in, sigma, theta, rands, samples, place)
   
   newevent = event + 1
   sumtime = times(newevent)
-  if (newevent < n_events) then
-    do while (place .ne. changer(newevent))
-      if (changer(newevent) < place) place = place + changes(newevent)
-      time_in = 0.0
+  time_in = 0.0 
+  do while (place .ne. changer(newevent) .and. newevent < n_events)
+     if (changer(newevent) < place) place = place + changes(newevent)
+     time_in = 0.0
+     
+     call advance_to_sample_time(nextSample, n_samples, ml, newevent, se, trait, t_el, &
+          time_in, sigma, theta, rands, samples, place)
+     
+     newevent = newevent + 1
+     sumtime = sumtime + times(newevent) - time_in
+  enddo
 
-      call advance_to_sample_time(ws, n_samples, ml, newevent, se, trait, t_el, &
-                             time_in, sigma, theta, rands, samples, place)
-
-      newevent = newevent + 1
-      sumtime = sumtime + times(newevent) - time_in
-      if (newevent == n_events) exit
-    enddo
-  endif
-
-  edge_length(a) = sum(times((event + 1):newevent)) ! sumtime (doesn't include time to samples)
+  edge_length(thisEdge) = sum(times((event + 1):newevent)) ! sumtime (doesn't include time to samples)
   call update_trait(trait, sumtime, sigma, theta, rands)
-  edge_trait(a) = trait
+  edge_trait(thisEdge) = trait
 
-  if (newevent < n_events) then
-    edge(a,:) = (/ nodes(event), nodes(newevent) /)
-    if (changes(newevent) == 1) then
-      a = a + 1
-      tmpws = ws
-      tmptrait = trait
-      call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newevent, a, edge,&
-      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpws)
-    endif
+  if (newevent == n_events) then
+    edge(thisEdge,:) = (/ nodes(event), place /) 
   else
-    edge(a,:) = (/ nodes(event), place /) 
+    edge(thisEdge,:) = (/ nodes(event), nodes(newevent) /)
+    if (changes(newevent) == 1) then
+      thisEdge = thisEdge + 1
+      tmpnextSample = nextSample
+      tmptrait = trait
+      call tree_climb(n, n_events, leaves, changes, changer, nodes, times, newevent, thisEdge, edge,&
+      edge_length, edge_trait, n_samples, se, n_leaves, ml, t_el, samples, tmptrait, sigma, theta, tmpnextSample)
+    endif
   endif
 
 end subroutine
