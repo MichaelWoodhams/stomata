@@ -10,13 +10,13 @@ program debug
   integer, dimension(:), allocatable :: nodes ! len n_events
   double precision, dimension(:), allocatable :: times ! len n_events
   integer :: time
-  integer :: a
+  integer :: thisEdge
   ! Initialize with nonsense values. I'd use NaN, but Fortran doesn't make this easy.
   integer, dimension(:,:), allocatable :: edge ! dim (n+n_events-2,2)
   double precision, dimension(:), allocatable :: edge_length ! len n+n_events-2
   double precision, dimension(:), allocatable :: edge_trait ! len n+n_events-2
   integer :: n_samples ! =16 normally. Number of times at which to sample
-  integer, dimension(:), allocatable :: se ! len n_samples
+  integer, dimension(:), allocatable :: preSampleEvent ! len n_samples
   integer :: n_leaves = -1000  ! test my theory this is never used.
   integer :: ml ! max number of leaves at any time. Typically equal or slightly bigger than n
   double precision, dimension(:), allocatable :: t_el ! len n_samples
@@ -24,7 +24,7 @@ program debug
   double precision :: trait 
   double precision :: sigma 
   double precision :: theta 
-  integer :: ws 
+  integer :: nextSample 
   integer :: i, j
   integer, allocatable :: seed(:)
   character (len=20) :: string
@@ -70,12 +70,12 @@ program debug
   end do
   
   read(10,*) string
-  if (string /= "se") then
-    stop "se not found"
+  if (string /= "preSampleEvent") then
+    stop "preSampleEvent not found"
   end if
-  allocate(se(n_samples))
+  allocate(preSampleEvent(n_samples))
   do i=1,n_samples
-     read(10,*) se(i)
+     read(10,*) preSampleEvent(i)
   end do
 
   read(10,*) string
@@ -117,13 +117,13 @@ program debug
   samples=-100
 
   time=1
-  a=1
+  thisEdge=1
   trait=0.0
-  ws=1
+  nextSample=1
 
   call tree_climb(n, n_events, leaves, changes, changer, nodes, times, &
-       time, a, edge, edge_length, edge_trait, n_samples, se, n_leaves, &
-       ml, t_el, samples, trait, sigma, theta, ws)
+       time, thisEdge, edge, edge_length, edge_trait, n_samples, preSampleEvent, n_leaves, &
+       ml, t_el, samples, trait, sigma, theta, nextSample)
 
   open(20,file="f95out.txt",action='write')
   write(20,*) "edge"

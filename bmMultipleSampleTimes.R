@@ -93,13 +93,13 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1, theta = 0)
                   changer = as.integer(changer), 
                   nodes = as.integer(nodes), 
                   times = as.double(times), 
-                  time = 1L, 
-                  a = 1L, 
+                  event = 1L, 
+                  thisEdge = 1L, 
                   edge = matrix(0L, n + n.events - 2, 2), 
                   edge_length = numeric(n + n.events - 2),
                   edge_trait = numeric(n + n.events - 2),
                   n_samples = as.integer(n.samples),
-                  se = as.integer(sample.events),
+                  preSampleEvent = as.integer(sample.events),
                   n_leaves = as.integer(n.leaves),
                   ml = as.integer(max.leaves),
                   t_el = as.double(t.el),
@@ -107,7 +107,7 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1, theta = 0)
                   trait = 0.0, #numeric(n + n_events - 2) # change value to change trait start
                   sigma = as.double(sigma),
                   theta = as.double(theta),
-                  ws = 1L
+                  nextSample = 1L
   )
   res = list(edge = test$edge, 
              edge.length = test$edge_length, 
@@ -125,7 +125,6 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1, theta = 0)
 for (theta in theta_values) {
   for (bdratio in bdratio_values){
     print(sprintf("Theta: %f, BD Ratio: %f",theta,bdratio))
-    print(paste('BD RATIO', bdratio))
     rand.correlations = numeric(REPS)
     rand.sds = numeric(REPS)
     rand.sigma2 = numeric(REPS)
