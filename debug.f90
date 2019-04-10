@@ -17,10 +17,9 @@ program debug
   double precision, dimension(:), allocatable :: edge_trait ! len n+n_events-2
   integer :: n_samples ! =16 normally. Number of times at which to sample
   integer, dimension(:), allocatable :: preSampleEvent ! len n_samples
-  integer :: n_leaves = -1000  ! test my theory this is never used.
-  integer :: ml ! max number of leaves at any time. Typically equal or slightly bigger than n
+  integer :: maxLeaves ! max number of leaves at any time. Typically equal or slightly bigger than n
   double precision, dimension(:), allocatable :: t_el ! len n_samples
-  double precision, dimension(:,:),allocatable :: samples ! dim(ml,n_samples)
+  double precision, dimension(:,:),allocatable :: samples ! dim(maxLeaves,n_samples)
   double precision :: trait 
   double precision :: sigma 
   double precision :: theta 
@@ -98,18 +97,18 @@ program debug
 
   close(10) 
 
-  ml=0
+  maxLeaves=0
   allocate(leaves(n_events))
   leaves(1)=1
   do i=2,n_events
      leaves(i)=leaves(i-1)+changes(i-1)
-     ml=max(ml,leaves(i))
+     maxLeaves=max(maxLeaves,leaves(i))
   end do
 
   allocate(edge(n+n_events-2,2))
   allocate(edge_length(n+n_events-2))
   allocate(edge_trait(n+n_events-2))
-  allocate(samples(ml,n_samples))
+  allocate(samples(maxLeaves,n_samples))
   ! Initialize to nonsense values
   edge=-1
   edge_length=-1
@@ -121,9 +120,9 @@ program debug
   trait=0.0
   nextSample=1
 
-  call tree_climb(n, n_events, leaves, changes, changer, nodes, times, &
-       time, thisEdge, edge, edge_length, edge_trait, n_samples, preSampleEvent, n_leaves, &
-       ml, t_el, samples, trait, sigma, theta, nextSample)
+  call tree_climb(n, n_events, changes, changer, nodes, times, time, &
+       thisEdge, edge, edge_length, edge_trait, n_samples, preSampleEvent, &
+       maxLeaves, t_el, samples, trait, sigma, theta, nextSample)
 
   open(20,file="f95out.txt",action='write')
   write(20,*) "edge"
@@ -139,7 +138,7 @@ program debug
      write(20,"(F10.5)") edge_trait(i)
   end do
   write(20,*) "samples"
-  do i=1,ml
+  do i=1,maxLeaves
      do j=1,n_samples
         write(20,"(F10.4)",advance='no') samples(i,j)
      end do

@@ -14,8 +14,6 @@
 !      just the end of time.)
 ! changer, const integer(n_events): The 'place' at which extinction/speciation
 !      occurs.
-! leaves, const integer(n_events): The number of leaves present at
-!      immediately before each event. Is cumulative sum of 'changes'
 ! nodes, const integer(n_events): node identifier number for the node
 !      which is where this event happens. (Final leaves have node
 !      numbers 1...n. These are not represented in nodes array.)
@@ -69,8 +67,6 @@
 
 
 ! Redundant variables: I think these can all be removed.
-! leaves, const integer(n_events): number of extant leaves immediately prior(??)
-!    to indexed event. (Is cumulative sum of 'changes')
 ! n is used only in dimensions of edge arrays. Could replace by n_edges.
 
 
@@ -131,119 +127,170 @@ subroutine advance_to_sample_time(nextSample, n_samples, maxLeaves, event, &
   enddo
 end subroutine advance_to_sample_time
 
-
-! n.edge = n + n.events - 2
-! res = tree.climb(1, 1, matrix(0, n.edge, 2), numeric(n.edge))
-
-! See variable glossary for explanation of parameters.
-recursive subroutine tree_climb(n, n_events, leaves, changes, changer, nodes, &
+! We are at event 'event', which is a speciation event.
+! We are going to process one of the two subtrees, which one
+! is determined by value of 'place'. (For place =  place-of-'event',
+! we do left subtree, if place = ditto + 1, right subtree.)
+recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
-     preSampleEvent, n_leaves, maxLeaves, t_el, samples, baseTrait, sigma, &
-     theta, baseNextSample)
+     preSampleEvent, maxLeaves, t_el, samples, trait, sigma, &
+     theta, nextSample)
 
-  implicit none
-  integer, intent(IN) :: n, n_events, event, n_samples, n_leaves, maxLeaves
+    implicit none
+  integer, intent(IN) :: n, n_events, event, n_samples, maxLeaves
   integer, dimension(n_events - 1), intent(IN) :: changes
-  integer, dimension(n_events), intent(IN) :: leaves, changer, nodes
+  integer, dimension(n_events), intent(IN) :: changer, nodes
   integer, dimension(n_samples), intent(IN) :: preSampleEvent
 
-  integer :: thisEdge, place, newevent, baseNextSample, tmpnextSample, nextSample
-  integer, dimension(n + n_events - 2, 2) :: edge
+! place, nextSample change, but returned value not used by calling function.
+  integer, intent(INOUT) :: nextSample, thisEdge, place 
+  integer, dimension(n + n_events - 2, 2), intent(INOUT) :: edge
 
   double precision, intent(IN) :: sigma, theta
   double precision, dimension(n_events), intent(IN) :: times
   double precision, dimension(n_samples), intent(IN) :: t_el
 
-  double precision :: time_in, tmptrait, trait, baseTrait, sumtime, rand_var
-  double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
-  double precision, dimension(maxLeaves, n_samples) :: samples
+! trait changes, but returned value not used by calling function.
+  double precision, intent(INOUT) :: trait
+  double precision, dimension(n + n_events - 2), intent(INOUT) :: edge_length, edge_trait
+  double precision, dimension(maxLeaves, n_samples), intent(INOUT) :: samples
 
-  nextSample = baseNextSample
-  trait = baseTrait
+  integer :: newevent, tmpnextSample
+  double precision :: time_in, tmptrait, sumtime
+
+  ! On entry:
+  ! 'event' is a speciation event, and we are processing the 'place'th
+  !   edge, which is one of the two edges from this event.
+  !   At start of this edge, we have 'trait' value. 
+  
+  ! How far have we progressed along branch (in 'trait' value)?
   time_in = 0.0
-  place = changer(event)
-
+  ! Closely associated with this is 'sumtime' which is how much
+  ! trait evolution time we've passed, but not updated 'trait' for.
+  
+  ! Usually changes nothing (if no sample times between 'event' and
+  ! 'event+1'), but if there are, updates 'trait' to time of last of
+  ! these sample times, updates preSampleEvent to point to latest of
+  ! these sample times, and time_in to the time diff between event
+  ! and last sample time (where trait was updated to.)
   call advance_to_sample_time(nextSample, n_samples, maxLeaves, event, &
        preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
 
   newevent = event + 1
-  sumtime = times(newevent) - time_in
-  time_in = 0.0
-  
+  ! In stepping to next event, sumtime is how much time has passed which
+  ! has not been used to update 'trait'
+  ! This version of program is being bug-compatible with old version.
+  ! This is an instance of that. Old program was inconsistent.
+  if (place == changer(event)) then
+     sumtime = times(newevent) - time_in
+  else
+     sumtime = times(newevent)
+  endif
+  time_in = 0.0 ! no more 'hidden' accounted-for time, as sumtime accounts for it.
+
+  ! do while (new event is not occuring on this edge)
+  !      and (haven't reached tip of tree)
   do while (place .ne. changer(newevent) .and. newevent < n_events )
+     ! As 'place' counts how far we are from the left of the tree,
+     ! if an event happened to the left of us, 'place' changes
      if (changer(newevent) < place) place = place + changes(newevent)
      
      time_in = 0.0
-     
+
+     ! I believe there is a bug here: time being advanced should make use
+     ! of sumtime. I'll come back to fix this later.
      call advance_to_sample_time(nextSample, n_samples, maxLeaves, newevent, &
           preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
      
      newevent = newevent + 1
      sumtime = sumtime + times(newevent) - time_in
   enddo
+  ! At this point, one of three things has happened:
+  ! * We've reached the end of the tree (newevent == n_events)
+  ! * We've reached a speciation event on this branch
+  ! * We've reached an extinction event on this branch
   
+  ! Update edge info: edge length, trait value at end.
   edge_length(thisEdge) = sum(times((event + 1):newevent)) 
   call update_trait(trait, sumtime, sigma, theta)
   edge_trait(thisEdge) = trait
     
   if (newevent == n_events) then
+     ! 'reached end of tree' case. Terminating node is numbered 'place'.
     edge(thisEdge,:) = (/ nodes(event), place /)
-  else 
+  else
+    ! two 'reached event' cases: terminating node number is nodes(newevent)
     edge(thisEdge,:) = (/ nodes(event), nodes(newevent) /)
 
+    ! If 'reached extinction event' case, nothing more to be done. Otherwise:
     if (changes(newevent) == 1) then
-      thisEdge = thisEdge + 1
-      tmpnextSample = nextSample
-      tmptrait = trait
-      call tree_climb(n, n_events, leaves, changes, changer, nodes, times, &
+       ! Found a speciation event at end of this edge.
+       thisEdge = thisEdge + 1 ! Ready to fill in next edge
+       ! TO DO: are next two needed? Could be avoided by
+       ! making local copy in tree_climb?
+      tmpnextSample = nextSample ! temp save to not trash nextSample.
+      tmptrait = trait ! Ditto trait
+      ! Starting from speciation event 'newevent', process both branches:
+      call tree_climb(n, n_events, changes, changer, nodes, times, &
            newevent, thisEdge, edge, edge_length, edge_trait, n_samples, &
-           preSampleEvent, n_leaves, maxLeaves, t_el, samples, tmptrait, &
+           preSampleEvent, maxLeaves, t_el, samples, tmptrait, &
            sigma, theta, tmpnextSample)
     endif
   endif
-  
-  thisEdge = thisEdge + 1
 
+end subroutine do_subtree
+
+! n.edge = n + n.events - 2
+! res = tree.climb(1, 1, matrix(0, n.edge, 2), numeric(n.edge))
+
+! See variable glossary for explanation of parameters.
+recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
+     times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
+     preSampleEvent, maxLeaves, t_el, samples, baseTrait, sigma, &
+     theta, baseNextSample)
+
+  implicit none
+  integer, intent(IN) :: n, n_events, event, n_samples, maxLeaves
+  integer, dimension(n_events - 1), intent(IN) :: changes
+  integer, dimension(n_events), intent(IN) :: changer, nodes
+  integer, dimension(n_samples), intent(IN) :: preSampleEvent
+
+  integer :: thisEdge, place, newevent, baseNextSample, tmpnextSample, nextSample
+  integer, dimension(n + n_events - 2, 2), intent(INOUT) :: edge
+
+  double precision, intent(IN) :: sigma, theta
+  double precision, dimension(n_events), intent(IN) :: times
+  double precision, dimension(n_samples), intent(IN) :: t_el
+
+  double precision :: time_in, tmptrait, trait, baseTrait, sumtime
+  double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
+  double precision, dimension(maxLeaves, n_samples) :: samples
+
+  ! On entry to this routine:
+  ! 'event' is a speciation event.
+  ! 'place' is the place of the edge leading up to this event.
+  ! 'baseTrait' is the trait value at this event
+  ! 'baseNextSample' is the index of next sampling time after this event
+  
   nextSample = baseNextSample
   trait = baseTrait
-  time_in = 0.0
-  place = changer(event) + 1
-
-  call advance_to_sample_time(nextSample, n_samples, maxLeaves, event, &
-       preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
+  place = changer(event)
+  ! As this is speciation node at 'place', it has two child edges:
+  ! at 'place' and 'place+1'. We call do_subtree on each of them.
   
-  newevent = event + 1
-  sumtime = times(newevent)
-  time_in = 0.0 
-  do while (place .ne. changer(newevent) .and. newevent < n_events)
-     if (changer(newevent) < place) place = place + changes(newevent)
-     time_in = 0.0
-     
-     call advance_to_sample_time(nextSample, n_samples, maxLeaves, newevent, &
-          preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
-     
-     newevent = newevent + 1
-     sumtime = sumtime + times(newevent) - time_in
-  enddo
+  call do_subtree(place, n, n_events, changes, changer, nodes, &
+     times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
+     preSampleEvent, maxLeaves, t_el, samples, trait, sigma, &
+     theta, nextSample)
 
-  edge_length(thisEdge) = sum(times((event + 1):newevent)) 
-  call update_trait(trait, sumtime, sigma, theta)
-  edge_trait(thisEdge) = trait
+  thisEdge = thisEdge + 1 ! moving to a new edge
+  nextSample = baseNextSample
+  trait = baseTrait
+  place = changer(event) + 1 ! Do the place+1 edge this time.
 
-  if (newevent == n_events) then
-    edge(thisEdge,:) = (/ nodes(event), place /) 
-  else
-    edge(thisEdge,:) = (/ nodes(event), nodes(newevent) /)
-    if (changes(newevent) == 1) then
-      thisEdge = thisEdge + 1
-      tmpnextSample = nextSample
-      tmptrait = trait
-      call tree_climb(n, n_events, leaves, changes, changer, nodes, times, &
-      newevent, thisEdge, edge, edge_length, edge_trait, n_samples, &
-      preSampleEvent, n_leaves, maxLeaves, t_el, samples, tmptrait, sigma, &
-      theta, tmpnextSample)
-    endif
-  endif
-
+  call do_subtree(place, n, n_events, changes, changer, nodes, &
+     times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
+     preSampleEvent, maxLeaves, t_el, samples, trait, sigma, &
+     theta, nextSample)
 end subroutine
 
