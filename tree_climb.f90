@@ -44,7 +44,7 @@
 !      slice through tree.
 ! preSampleEvent, const integer(n_samples): event number immediately preceeding
 !      sample time.
-! t_el, const double(n_samples): t_el(nextSample) is clock time between most 
+! time_E_to_S, const double(n_samples): time_E_to_S(nextSample) is clock time between most 
 !      recent event (number preSampleEvent(nextSample)) and sample time.
 ! nextSample, integer: the next sampling time we will meet, i.e. earliest 
 !    sampling time we have not already passed.
@@ -61,14 +61,9 @@
 ! time_in, double: How far along current edge we are in 'clock' time?
 ! sumtime, double: ? cumulative time along this branch?
 
-
-
-! n_leaves, const integer: ???
-
-
-! Redundant variables: I think these can all be removed.
-! n is used only in dimensions of edge arrays. Could replace by n_edges.
-
+! Lots of this never changes and gets passed through many calls.
+! Had I the patience, I'd learn about modules and store all this
+! in what passes for a 'common' block in modern Fortran.
 
 ! update_trait randomly updates a trait according to an Ornstein-Uhlenbeck
 ! process with mean 0.
@@ -110,22 +105,54 @@ end subroutine update_trait
 ! Else do nothing.
 ! nextSample, time_in can change (increase).
 
-subroutine advance_to_sample_time(nextSample, n_samples, maxLeaves, event, &
-  preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
+subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
+     place, finalUpdate, n_events, times, n_samples, maxLeaves, &
+     preSampleEvent, time_E_to_S, sigma, theta, debug)
 
   implicit none
+  double precision, intent(INOUT) :: trait, timeBehind, samples(maxLeaves,n_samples)
   integer, intent(INOUT) :: nextSample
-  integer, intent(IN) :: n_samples, maxLeaves, event, place, preSampleEvent(n_samples)
-  double precision, intent(INOUT) :: trait, time_in, samples(maxLeaves,n_samples)
-  double precision, intent(IN) :: sigma, theta, t_el(n_samples)
+  integer, intent(IN) :: event, place
+  logical, intent(IN) :: finalUpdate, debug
+
+  ! And the invariant stuff passed everywhere
   
-  do while (nextSample <= n_samples .and. event == preSampleEvent(nextSample))
-     call update_trait(trait, t_el(nextSample)-time_in, sigma, theta)
-     samples(place, nextSample) = trait
-     time_in = t_el(nextSample)
-     nextSample = nextSample + 1
-  enddo
-end subroutine advance_to_sample_time
+  integer, intent(IN) :: n_events, n_samples, maxLeaves, preSampleEvent(n_samples)
+  double precision, intent(IN) :: times(n_events), time_E_to_S(n_samples), sigma, theta
+  ! Local variables
+  double precision :: time_in=0
+
+  if (nextSample <= n_samples .and. event == preSampleEvent(nextSample)+1) then
+     ! Stepping forward in time to 'event' will take us past (at least) one
+     ! sample time. So we need to advance 'trait' to this new time,
+     ! record value in 'samples', and set timeLeft appropriately.
+     ! Do loop is necessary in case one step include several sample times.
+     do while (nextSample <= n_samples .and. event == preSampleEvent(nextSample))
+        if (debug) then
+           write (*,*) "Advancing time by ",timeBehind+time_E_to_S(nextSample)-time_in,&
+                " for sample ",nextSample," at event=",event," place=",place
+        endif
+        call update_trait(trait, timeBehind+time_E_to_S(nextSample)-time_in, sigma, theta)
+        timeBehind=0
+        ! time_in is how far into this time step we've advanced the value of
+        ! 'trait'. 
+        time_in = time_E_to_S(nextSample) 
+        nextSample = nextSample + 1
+        samples(place, nextSample) = trait
+     enddo
+     timeBehind = times(event)-time_in
+  else
+     ! No samples in this step
+     timeBehind = timeBehind+times(event)
+  end if
+  if (finalUpdate) then
+        if (debug) then
+           write (*,*) "Advancing time by ",timeBehind," for end of branch at event=",event," place=",place
+        endif
+     call update_trait(trait, timeBehind, sigma, theta)
+     timeBehind = 0
+  end if
+end subroutine advance_trait
 
 ! We are at event 'event', which is a speciation event.
 ! We are going to process one of the two subtrees, which one
@@ -133,10 +160,11 @@ end subroutine advance_to_sample_time
 ! we do left subtree, if place = ditto + 1, right subtree.)
 recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
-     preSampleEvent, maxLeaves, t_el, samples, trait, sigma, &
-     theta, nextSample)
+     preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
+     theta, nextSample, debug)
 
-    implicit none
+  implicit none
+  logical, intent(IN) :: debug
   integer, intent(IN) :: n, n_events, event, n_samples, maxLeaves
   integer, dimension(n_events - 1), intent(IN) :: changes
   integer, dimension(n_events), intent(IN) :: changer, nodes
@@ -148,7 +176,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
 
   double precision, intent(IN) :: sigma, theta
   double precision, dimension(n_events), intent(IN) :: times
-  double precision, dimension(n_samples), intent(IN) :: t_el
+  double precision, dimension(n_samples), intent(IN) :: time_E_to_S
 
 ! trait changes, but returned value not used by calling function.
   double precision, intent(INOUT) :: trait
@@ -156,63 +184,43 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
   double precision, dimension(maxLeaves, n_samples), intent(INOUT) :: samples
 
   integer :: newevent, tmpnextSample
-  double precision :: time_in, tmptrait, sumtime
+  double precision :: timeBehind, tmptrait
 
   ! On entry:
   ! 'event' is a speciation event, and we are processing the 'place'th
   !   edge, which is one of the two edges from this event.
   !   At start of this edge, we have 'trait' value. 
+  ! We are going to step forward through time, by advancing event pointer
+  ! 'newevent'. 'timeBehind' records how much time has passed which has not
+  ! yet been used in altering 'trait' value.
   
-  ! How far have we progressed along branch (in 'trait' value)?
-  time_in = 0.0
-  ! Closely associated with this is 'sumtime' which is how much
-  ! trait evolution time we've passed, but not updated 'trait' for.
-  
-  ! Usually changes nothing (if no sample times between 'event' and
-  ! 'event+1'), but if there are, updates 'trait' to time of last of
-  ! these sample times, updates preSampleEvent to point to latest of
-  ! these sample times, and time_in to the time diff between event
-  ! and last sample time (where trait was updated to.)
-  call advance_to_sample_time(nextSample, n_samples, maxLeaves, event, &
-       preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
-
-  newevent = event + 1
-  ! In stepping to next event, sumtime is how much time has passed which
-  ! has not been used to update 'trait'
-  ! This version of program is being bug-compatible with old version.
-  ! This is an instance of that. Old program was inconsistent.
-  if (place == changer(event)) then
-     sumtime = times(newevent) - time_in
-  else
-     sumtime = times(newevent)
+  if (debug) then
+     write (*,*) "Enter do_subtree, event=",event,", place=",place
   endif
-  time_in = 0.0 ! no more 'hidden' accounted-for time, as sumtime accounts for it.
 
-  ! do while (new event is not occuring on this edge)
-  !      and (haven't reached tip of tree)
-  do while (place .ne. changer(newevent) .and. newevent < n_events )
-     ! As 'place' counts how far we are from the left of the tree,
-     ! if an event happened to the left of us, 'place' changes
+  timeBehind=0
+  newevent = event+1
+  ! As 'place' counts how far we are from the left of the tree,
+  ! if an event happened to the left of us, 'place' changes
+  if (changer(newevent) < place) place = place + changes(newevent)
+
+  ! Step forward through events until either newevent is a
+  ! speciation/extinction on this branch, or is end of tree
+  do while (place .ne. changer(newevent) .and. newevent .ne. n_events)
+     call advance_trait(trait, timeBehind, nextSample, samples, newevent, &
+          place, .false., n_events, times, n_samples, maxLeaves, &
+          preSampleEvent, time_E_to_S, sigma, theta, debug)
+     newevent = newevent+1
      if (changer(newevent) < place) place = place + changes(newevent)
-     
-     time_in = 0.0
+  end do
+  ! Now newevent is on this branch, or is end of tree.
+  ! Update trait with any remaining time:
+  call advance_trait(trait, timeBehind, nextSample, samples, newevent, &
+       place, .true., n_events, times, n_samples, maxLeaves, preSampleEvent, &
+       time_E_to_S, sigma, theta, debug)
 
-     ! I believe there is a bug here: time being advanced should make use
-     ! of sumtime. I'll come back to fix this later.
-     call advance_to_sample_time(nextSample, n_samples, maxLeaves, newevent, &
-          preSampleEvent, trait, t_el, time_in, sigma, theta, samples, place)
-     
-     newevent = newevent + 1
-     sumtime = sumtime + times(newevent) - time_in
-  enddo
-  ! At this point, one of three things has happened:
-  ! * We've reached the end of the tree (newevent == n_events)
-  ! * We've reached a speciation event on this branch
-  ! * We've reached an extinction event on this branch
-  
   ! Update edge info: edge length, trait value at end.
   edge_length(thisEdge) = sum(times((event + 1):newevent)) 
-  call update_trait(trait, sumtime, sigma, theta)
   edge_trait(thisEdge) = trait
     
   if (newevent == n_events) then
@@ -233,9 +241,12 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
       ! Starting from speciation event 'newevent', process both branches:
       call tree_climb(n, n_events, changes, changer, nodes, times, &
            newevent, thisEdge, edge, edge_length, edge_trait, n_samples, &
-           preSampleEvent, maxLeaves, t_el, samples, tmptrait, &
-           sigma, theta, tmpnextSample)
+           preSampleEvent, maxLeaves, time_E_to_S, samples, tmptrait, &
+           sigma, theta, tmpnextSample, debug)
     endif
+  endif
+  if (debug) then
+     write (*,*) "Exiting do_subtree, event=",event,", place=",place
   endif
 
 end subroutine do_subtree
@@ -246,10 +257,11 @@ end subroutine do_subtree
 ! See variable glossary for explanation of parameters.
 recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
-     preSampleEvent, maxLeaves, t_el, samples, baseTrait, sigma, &
-     theta, baseNextSample)
+     preSampleEvent, maxLeaves, time_E_to_S, samples, baseTrait, sigma, &
+     theta, baseNextSample, debug)
 
   implicit none
+  logical, intent(IN) :: debug
   integer, intent(IN) :: n, n_events, event, n_samples, maxLeaves
   integer, dimension(n_events - 1), intent(IN) :: changes
   integer, dimension(n_events), intent(IN) :: changer, nodes
@@ -260,7 +272,7 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
 
   double precision, intent(IN) :: sigma, theta
   double precision, dimension(n_events), intent(IN) :: times
-  double precision, dimension(n_samples), intent(IN) :: t_el
+  double precision, dimension(n_samples), intent(IN) :: time_E_to_S
 
   double precision :: time_in, tmptrait, trait, baseTrait, sumtime
   double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
@@ -280,8 +292,8 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
   
   call do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
-     preSampleEvent, maxLeaves, t_el, samples, trait, sigma, &
-     theta, nextSample)
+     preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
+     theta, nextSample, debug)
 
   thisEdge = thisEdge + 1 ! moving to a new edge
   nextSample = baseNextSample
@@ -290,7 +302,7 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
 
   call do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
-     preSampleEvent, maxLeaves, t_el, samples, trait, sigma, &
-     theta, nextSample)
+     preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
+     theta, nextSample, debug)
 end subroutine
 

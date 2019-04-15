@@ -18,7 +18,7 @@ program debug
   integer :: n_samples ! =16 normally. Number of times at which to sample
   integer, dimension(:), allocatable :: preSampleEvent ! len n_samples
   integer :: maxLeaves ! max number of leaves at any time. Typically equal or slightly bigger than n
-  double precision, dimension(:), allocatable :: t_el ! len n_samples
+  double precision, dimension(:), allocatable :: time_E_to_S ! len n_samples
   double precision, dimension(:,:),allocatable :: samples ! dim(maxLeaves,n_samples)
   double precision :: trait 
   double precision :: sigma 
@@ -27,14 +27,23 @@ program debug
   integer :: i, j
   integer, allocatable :: seed(:)
   character (len=20) :: string
+  logical :: debugFlag
 
   ! Seed RNG. Will later reuse n for something else.
   call random_seed(size = n)
   allocate(seed(n))
   seed = [(i,i=1,n)]
   call random_seed(put=seed)
+
+  string='R_output.txt'
+  if (command_argument_count() > 0) then
+     call get_command_argument(1, string)
+  endif
+  ! For debugging, provide the optional file name argument, then another arg.
+  debugFlag = (command_argument_count() > 1)
   
-  open(10,file='R_output.txt')
+  ! A lack of error checking here.
+  open(10,file=string)
   read(10,*) n
   read(10,*) n_events
   read(10,*) n_samples  
@@ -87,12 +96,12 @@ program debug
   end do
 
   read(10,*) string
-  if (string /= "t_el") then
-    stop "t_el not found"
+  if (string /= "time_E_to_S") then
+    stop "time_E_to_S not found"
   end if
-  allocate(t_el(n_samples))
+  allocate(time_E_to_S(n_samples))
   do i=1,n_samples
-     read(10,*) t_el(i)
+     read(10,*) time_E_to_S(i)
   end do
 
   close(10) 
@@ -122,7 +131,7 @@ program debug
 
   call tree_climb(n, n_events, changes, changer, nodes, times, time, &
        thisEdge, edge, edge_length, edge_trait, n_samples, preSampleEvent, &
-       maxLeaves, t_el, samples, trait, sigma, theta, nextSample)
+       maxLeaves, time_E_to_S, samples, trait, sigma, theta, nextSample, debugFlag)
 
   open(20,file="f95out.txt",action='write')
   write(20,*) "edge"
