@@ -139,11 +139,11 @@ program debug
      write(20,"(2I6)") edge(i,1), edge(i,2)
   end do
   write(20,*) "edge_length"
-  do i=1,n_events-2
+  do i=1,n+n_events-2
      write(20,"(F10.7)") edge_length(i)
   end do
   write(20,*) "edge_trait"
-  do i=1,n_events-2
+  do i=1,n+n_events-2
      write(20,"(F10.5)") edge_trait(i)
   end do
   write(20,*) "samples"

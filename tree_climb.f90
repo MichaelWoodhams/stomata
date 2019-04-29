@@ -13,12 +13,13 @@
 !      -1 if extinction event. (No record for final event, as that is
 !      just the end of time.)
 ! changer, const integer(n_events): The 'place' at which extinction/speciation
-!      occurs.
+!      occurs. Value of changer(n_events) is never used.
 ! nodes, const integer(n_events): node identifier number for the node
 !      which is where this event happens. (Final leaves have node
 !      numbers 1...n. These are not represented in nodes array.)
 ! times, const double(n_events): clock time prior to each event
 !      i.e. times(i) is interval between event i-1 and event i.
+!      value of times(1) is never used.
 ! event, integer: index into events. The root event for which each call
 !      to tree_climb is processing the descendents of.
 ! newevent, integer: index into events, advanced as we traverse each
@@ -120,25 +121,28 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
   integer, intent(IN) :: n_events, n_samples, maxLeaves, preSampleEvent(n_samples)
   double precision, intent(IN) :: times(n_events), time_E_to_S(n_samples), sigma, theta
   ! Local variables
-  double precision :: time_in=0
+  double precision :: time_in
 
+  time_in=0
   if (nextSample <= n_samples .and. event == preSampleEvent(nextSample)+1) then
      ! Stepping forward in time to 'event' will take us past (at least) one
      ! sample time. So we need to advance 'trait' to this new time,
      ! record value in 'samples', and set timeLeft appropriately.
      ! Do loop is necessary in case one step include several sample times.
-     do while (nextSample <= n_samples .and. event == preSampleEvent(nextSample))
+     do while (nextSample <= n_samples .and. event == preSampleEvent(nextSample)+1)
         if (debug) then
-           write (*,*) "Advancing time by ",timeBehind+time_E_to_S(nextSample)-time_in,&
-                " for sample ",nextSample," at event=",event," place=",place
+           print '(A,F3.1,A,I1,A,I1,A,I1)',&
+                "Advancing time by ",timeBehind+time_E_to_S(nextSample)-time_in,&
+                " for sample ",nextSample," after event=",event-1," place=",place               
+                
         endif
         call update_trait(trait, timeBehind+time_E_to_S(nextSample)-time_in, sigma, theta)
         timeBehind=0
         ! time_in is how far into this time step we've advanced the value of
         ! 'trait'. 
         time_in = time_E_to_S(nextSample) 
-        nextSample = nextSample + 1
         samples(place, nextSample) = trait
+        nextSample = nextSample + 1
      enddo
      timeBehind = times(event)-time_in
   else
@@ -146,9 +150,10 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
      timeBehind = timeBehind+times(event)
   end if
   if (finalUpdate) then
-        if (debug) then
-           write (*,*) "Advancing time by ",timeBehind," for end of branch at event=",event," place=",place
-        endif
+     if (debug) then
+        print '(A,F3.1,A,I1,A,I1)', "Advancing time by ",timeBehind,&
+             " for end of branch at event=",event," place=",place
+     endif
      call update_trait(trait, timeBehind, sigma, theta)
      timeBehind = 0
   end if
@@ -195,23 +200,19 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
   ! yet been used in altering 'trait' value.
   
   if (debug) then
-     write (*,*) "Enter do_subtree, event=",event,", place=",place
+     print '(A,I1,A,I1,A,I1,A,I1)', "Enter do_subtree, event=",event," (node=",nodes(event),"), place=",place
   endif
 
   timeBehind=0
   newevent = event+1
-  ! As 'place' counts how far we are from the left of the tree,
-  ! if an event happened to the left of us, 'place' changes
-  if (changer(newevent) < place) place = place + changes(newevent)
-
   ! Step forward through events until either newevent is a
   ! speciation/extinction on this branch, or is end of tree
   do while (place .ne. changer(newevent) .and. newevent .ne. n_events)
      call advance_trait(trait, timeBehind, nextSample, samples, newevent, &
           place, .false., n_events, times, n_samples, maxLeaves, &
           preSampleEvent, time_E_to_S, sigma, theta, debug)
-     newevent = newevent+1
      if (changer(newevent) < place) place = place + changes(newevent)
+     newevent = newevent+1
   end do
   ! Now newevent is on this branch, or is end of tree.
   ! Update trait with any remaining time:
@@ -225,15 +226,23 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
     
   if (newevent == n_events) then
      ! 'reached end of tree' case. Terminating node is numbered 'place'.
-    edge(thisEdge,:) = (/ nodes(event), place /)
+     edge(thisEdge,:) = (/ nodes(event), place /)
+     thisEdge = thisEdge+1
+     if (debug) then
+        print '(A,I1,A,I1)', "Reached end of tree at event=",newevent,&
+              ", node and place=",place
+     endif
   else
-    ! two 'reached event' cases: terminating node number is nodes(newevent)
+     ! two 'reached event' cases: extinction or speciation.
+     ! terminating node number is nodes(newevent)
     edge(thisEdge,:) = (/ nodes(event), nodes(newevent) /)
-
-    ! If 'reached extinction event' case, nothing more to be done. Otherwise:
+    thisEdge = thisEdge + 1
     if (changes(newevent) == 1) then
+       if (debug) then
+          print '(A,I1,A,I1,A,I1)', "Speciation at event=",newevent,&
+               " (node=",nodes(newevent),"), place=",place
+       endif
        ! Found a speciation event at end of this edge.
-       thisEdge = thisEdge + 1 ! Ready to fill in next edge
        ! TO DO: are next two needed? Could be avoided by
        ! making local copy in tree_climb?
       tmpnextSample = nextSample ! temp save to not trash nextSample.
@@ -243,10 +252,17 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
            newevent, thisEdge, edge, edge_length, edge_trait, n_samples, &
            preSampleEvent, maxLeaves, time_E_to_S, samples, tmptrait, &
            sigma, theta, tmpnextSample, debug)
-    endif
+   else
+      ! extinction event. Nothing need doing except debug output.
+      if (debug) then
+         print '(A,I1,A,I1,A,I1)', "Extinction at event=",newevent,&
+              " (node=",nodes(newevent),"), place=",place
+      endif
+   endif
   endif
   if (debug) then
-     write (*,*) "Exiting do_subtree, event=",event,", place=",place
+     print '(A,I1,A,I1,A,I1)', "Exiting do_subtree, event=",event,&
+          " (node=",nodes(event),"), place=",place
   endif
 
 end subroutine do_subtree
@@ -295,7 +311,6 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
      preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
      theta, nextSample, debug)
 
-  thisEdge = thisEdge + 1 ! moving to a new edge
   nextSample = baseNextSample
   trait = baseTrait
   place = changer(event) + 1 ! Do the place+1 edge this time.
