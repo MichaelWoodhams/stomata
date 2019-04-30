@@ -131,7 +131,7 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
      ! Do loop is necessary in case one step include several sample times.
      do while (nextSample <= n_samples .and. event == preSampleEvent(nextSample)+1)
         if (debug) then
-           print '(A,F3.1,A,I1,A,I1,A,I1)',&
+           print '(A,F8.4,A,I5,A,I5,A,I5)',&
                 "Advancing time by ",timeBehind+time_E_to_S(nextSample)-time_in,&
                 " for sample ",nextSample," after event=",event-1," place=",place               
                 
@@ -151,7 +151,7 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
   end if
   if (finalUpdate) then
      if (debug) then
-        print '(A,F3.1,A,I1,A,I1)', "Advancing time by ",timeBehind,&
+        print '(A,F8.4,A,I5,A,I5)', "Advancing time by ",timeBehind,&
              " for end of branch at event=",event," place=",place
      endif
      call update_trait(trait, timeBehind, sigma, theta)
@@ -200,7 +200,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
   ! yet been used in altering 'trait' value.
   
   if (debug) then
-     print '(A,I1,A,I1,A,I1,A,I1)', "Enter do_subtree, event=",event," (node=",nodes(event),"), place=",place
+     print '(A,I5,A,I5,A,I5,A,I5)', "Enter do_subtree, event=",event," (node=",nodes(event),"), place=",place
   endif
 
   timeBehind=0
@@ -229,7 +229,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
      edge(thisEdge,:) = (/ nodes(event), place /)
      thisEdge = thisEdge+1
      if (debug) then
-        print '(A,I1,A,I1)', "Reached end of tree at event=",newevent,&
+        print '(A,I5,A,I5)', "Reached end of tree at event=",newevent,&
               ", node and place=",place
      endif
   else
@@ -239,7 +239,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
     thisEdge = thisEdge + 1
     if (changes(newevent) == 1) then
        if (debug) then
-          print '(A,I1,A,I1,A,I1)', "Speciation at event=",newevent,&
+          print '(A,I5,A,I5,A,I5)', "Speciation at event=",newevent,&
                " (node=",nodes(newevent),"), place=",place
        endif
        ! Found a speciation event at end of this edge.
@@ -251,17 +251,17 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
       call tree_climb(n, n_events, changes, changer, nodes, times, &
            newevent, thisEdge, edge, edge_length, edge_trait, n_samples, &
            preSampleEvent, maxLeaves, time_E_to_S, samples, tmptrait, &
-           sigma, theta, tmpnextSample, debug)
+           sigma, theta, tmpnextSample, 0, debug)
    else
       ! extinction event. Nothing need doing except debug output.
       if (debug) then
-         print '(A,I1,A,I1,A,I1)', "Extinction at event=",newevent,&
+         print '(A,I5,A,I5,A,I5)', "Extinction at event=",newevent,&
               " (node=",nodes(newevent),"), place=",place
       endif
    endif
   endif
   if (debug) then
-     print '(A,I1,A,I1,A,I1)', "Exiting do_subtree, event=",event,&
+     print '(A,I5,A,I5,A,I5)', "Exiting do_subtree, event=",event,&
           " (node=",nodes(event),"), place=",place
   endif
 
@@ -274,7 +274,7 @@ end subroutine do_subtree
 recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
      preSampleEvent, maxLeaves, time_E_to_S, samples, baseTrait, sigma, &
-     theta, baseNextSample, debug)
+     theta, baseNextSample, rngseed, debug)
 
   implicit none
   logical, intent(IN) :: debug
@@ -283,7 +283,8 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
   integer, dimension(n_events), intent(IN) :: changer, nodes
   integer, dimension(n_samples), intent(IN) :: preSampleEvent
 
-  integer :: thisEdge, place, newevent, baseNextSample, tmpnextSample, nextSample
+  integer :: thisEdge, place, newevent, baseNextSample, tmpnextSample,&
+       nextSample, rngseed
   integer, dimension(n + n_events - 2, 2), intent(INOUT) :: edge
 
   double precision, intent(IN) :: sigma, theta
@@ -294,11 +295,23 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
   double precision, dimension(n + n_events - 2) :: edge_length, edge_trait
   double precision, dimension(maxLeaves, n_samples) :: samples
 
+  integer, allocatable :: seed(:) ! For seeding random numbers, unless =0.
+  integer :: seedLength, i
+
   ! On entry to this routine:
   ! 'event' is a speciation event.
   ! 'place' is the place of the edge leading up to this event.
   ! 'baseTrait' is the trait value at this event
   ! 'baseNextSample' is the index of next sampling time after this event
+
+  ! rng seeding: if rngseed==0, do nothing, else seed.
+  ! Recursive calls always have rngseed=0.
+  if (rngseed .ne. 0) then
+     call random_seed(size = seedLength)
+     allocate(seed(seedLength))
+     seed = [(i,i=rngseed,seedLength+rngseed-1)]
+     call random_seed(put=seed)
+  endif
   
   nextSample = baseNextSample
   trait = baseTrait

@@ -25,17 +25,10 @@ program debug
   double precision :: theta 
   integer :: nextSample 
   integer :: i, j
-  integer, allocatable :: seed(:)
   character (len=20) :: string
   logical :: debugFlag
 
-  ! Seed RNG. Will later reuse n for something else.
-  call random_seed(size = n)
-  allocate(seed(n))
-  seed = [(i,i=1,n)]
-  call random_seed(put=seed)
-
-  string='R_output.txt'
+  string='test0.txt'
   if (command_argument_count() > 0) then
      call get_command_argument(1, string)
   endif
@@ -131,7 +124,7 @@ program debug
 
   call tree_climb(n, n_events, changes, changer, nodes, times, time, &
        thisEdge, edge, edge_length, edge_trait, n_samples, preSampleEvent, &
-       maxLeaves, time_E_to_S, samples, trait, sigma, theta, nextSample, debugFlag)
+       maxLeaves, time_E_to_S, samples, trait, sigma, theta, nextSample, 1, debugFlag)
 
   open(20,file="f95out.txt",action='write')
   write(20,*) "edge"

@@ -88,7 +88,6 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1, theta = 0)
   test = .Fortran('tree_climb', 
                   n = as.integer(n), 
                   n_events = as.integer(n.events), 
-                  leaves = as.integer(leaves), 
                   changes = as.integer(changes), 
                   changer = as.integer(changer), 
                   nodes = as.integer(nodes), 
@@ -99,15 +98,16 @@ fast.tree = function(n, lambda=1, mu=1, sigma = 1, theta = 0)
                   edge_length = numeric(n + n.events - 2),
                   edge_trait = numeric(n + n.events - 2),
                   n_samples = as.integer(n.samples),
-                  preSampleEvent = as.integer(sample.events),
-                  n_leaves = as.integer(n.leaves),
+                  se = as.integer(sample.events),
                   ml = as.integer(max.leaves),
                   t_el = as.double(t.el),
                   samples = matrix(as.double(0.0), max.leaves, n.samples),
                   trait = 0.0, #numeric(n + n_events - 2) # change value to change trait start
                   sigma = as.double(sigma),
                   theta = as.double(theta),
-                  nextSample = 1L
+                  ws = 1L,
+                  rngseed = 1L,
+                  debug = FALSE
   )
   res = list(edge = test$edge, 
              edge.length = test$edge_length, 
