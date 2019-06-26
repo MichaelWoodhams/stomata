@@ -1,6 +1,6 @@
 dyn.load('tree_climb.so') # windows:  dyn.load('tree_climb.dll')
 
-fast.tree = function(n, lambda, mu, frac = 1, traits = FALSE, sigma = 1, theta=0, sampleTimes = 1, seed=1L)
+fast.tree = function(n, lambda, mu, frac = 1, traits = FALSE, sigma = 1, theta=0, sampleTimes = 1, seed=1L, startTrait=0)
 {
   #  print('start')
   if (any(sampleTimes <= 0 | sampleTimes >= 1)) stop('all values of sampleTimes must be between 0 and 1')
@@ -101,7 +101,7 @@ fast.tree = function(n, lambda, mu, frac = 1, traits = FALSE, sigma = 1, theta=0
                   ml = as.integer(max.leaves),
                   t_el = as.double(t.el),
                   samples = matrix(as.double(0.0), max.leaves, n.samples),
-                  trait = 0.0, #numeric(n + n_events - 2) # change value to change trait start
+                  trait = startTrait, 
                   sigma = as.double(sigma),
                   theta = as.double(theta),
                   ws = 1L,

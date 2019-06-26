@@ -34,6 +34,10 @@ theta <- as.numeric(args[[2]])
 if (length(args)>=3) {
   REPS=as.numeric(args[[3]])
 }
+if (length(args)>=4) {
+  climate=as.numeric(args[[4]])
+  print(climate)
+}
 
 sigma = 1
 data = read.csv('zachos_correl_and_calc_gsmax1.csv')
@@ -71,7 +75,17 @@ numfossils  <- numfossils[length(numfossils):1]
     rand.ace.se = numeric(REPS)
   
     for (reps in 1:REPS){
+      # RNG is used for initial trait value, and for sampling from fossil trait values
+      # at a given fossil age.
+      set.seed(reps+100*bdratio+10000*theta)
       if (reps%%100 == 0) print(reps)
+      if (theta!=0) {
+        # For OU process, equilibrium distribution of trait is Gaussian with mean 0 and variance sigma^2/(2 theta)
+        startTrait = rnorm(1,mean=0,sd=sigma/sqrt(2*theta))
+      } else {
+        # theta=0 is Brownian motion case for trait. There is no equilibrium distribution.
+        startTrait = 0
+      }
       #print(reps)
       res = fast.tree(n = numtips, lambda = bdratio, mu = 1, theta = theta, frac = 1, 
                       sigma = sigma, sampleTimes = fossil.ages / 93, traits = TRUE, seed=reps)
