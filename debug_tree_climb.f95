@@ -126,7 +126,7 @@ program debug
        thisEdge, edge, edge_length, edge_trait, n_samples, preSampleEvent, &
        maxLeaves, time_E_to_S, samples, trait, sigma, theta, nextSample, 1, debugFlag)
 
-  open(20,file="f95out.txt",action='write')
+  open(20,file="debug_out.txt",action='write')
   write(20,*) "edge"
   do i=1,n+n_events-2
      write(20,"(2I6)") edge(i,1), edge(i,2)

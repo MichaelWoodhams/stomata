@@ -1,0 +1,20 @@
+Package: fasttree2019
+Type: Package
+Title: Simulate Continuous Trait on Tree With Sampling At Specified Times
+Version: 0.1
+Authors@R: c(person("Michael", "Woodhams", role = c("aut", "cre"), 
+      email = "michael.woodhams@utas.edu.au"),
+    person("Nicholas", "Beeton", email = "", role = "aut"),
+    person("Gregory", "Jordan", email = "greg.jordan@utas.edu.au", role = "ctb"))
+Description: Simulates a birth/death tree, and evolves a continous trait over
+    the tree under a Brownian motion (random walk) or Ornstein-Uhlenbeck
+    process. The trait values on all extant branches will be recorded at
+    specified times. The tree is built to have a specified number of terminal
+    tips, but is not constrained to have never had more than this number of
+    tips in the past.
+License: LGPL version 2 or later
+URL: https://github.com/MichaelWoodhams/stomata
+Language: en-UK
+NeedsCompilation: yes
+Suggests:
+    ape

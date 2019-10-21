@@ -1,0 +1,290 @@
+# args mesaurement, bdratio, climate, reps
+# (time /usr/bin/R < runSim.R --slave --args ME BD CL 5000) &> results/timing_ME_BD_CL.txt
+(time /usr/bin/R < runSim.R --slave --args GCL   1.1 1 5000) &> results/timing_GCL_1.1_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.1 1 5000) &> results/timing_SI_1.1_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.1 1 5000) &> results/timing_SD_1.1_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.1 1 5000) &> results/timing_EA_1.1_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.1 1 5000) &> results/timing_Gsmax_1.1_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.5 1 5000) &> results/timing_GCL_1.5_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.5 1 5000) &> results/timing_SI_1.5_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.5 1 5000) &> results/timing_SD_1.5_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.5 1 5000) &> results/timing_EA_1.5_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.5 1 5000) &> results/timing_Gsmax_1.5_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   2 1 5000) &> results/timing_GCL_2_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    2 1 5000) &> results/timing_SI_2_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    2 1 5000) &> results/timing_SD_2_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    2 1 5000) &> results/timing_EA_2_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 2 1 5000) &> results/timing_Gsmax_2_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   5 1 5000) &> results/timing_GCL_5_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    5 1 5000) &> results/timing_SI_5_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    5 1 5000) &> results/timing_SD_5_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    5 1 5000) &> results/timing_EA_5_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 5 1 5000) &> results/timing_Gsmax_5_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   10 1 5000) &> results/timing_GCL_10_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    10 1 5000) &> results/timing_SI_10_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    10 1 5000) &> results/timing_SD_10_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    10 1 5000) &> results/timing_EA_10_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 10 1 5000) &> results/timing_Gsmax_10_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   20 1 5000) &> results/timing_GCL_20_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    20 1 5000) &> results/timing_SI_20_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    20 1 5000) &> results/timing_SD_20_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    20 1 5000) &> results/timing_EA_20_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 20 1 5000) &> results/timing_Gsmax_20_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   50 1 5000) &> results/timing_GCL_50_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    50 1 5000) &> results/timing_SI_50_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    50 1 5000) &> results/timing_SD_50_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    50 1 5000) &> results/timing_EA_50_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 50 1 5000) &> results/timing_Gsmax_50_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   100 1 5000) &> results/timing_GCL_100_1.txt
+(time /usr/bin/R < runSim.R --slave --args SI    100 1 5000) &> results/timing_SI_100_1.txt
+(time /usr/bin/R < runSim.R --slave --args SD    100 1 5000) &> results/timing_SD_100_1.txt
+(time /usr/bin/R < runSim.R --slave --args EA    100 1 5000) &> results/timing_EA_100_1.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 100 1 5000) &> results/timing_Gsmax_100_1.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.1 2 5000) &> results/timing_GCL_1.1_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.1 2 5000) &> results/timing_SI_1.1_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.1 2 5000) &> results/timing_SD_1.1_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.1 2 5000) &> results/timing_EA_1.1_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.1 2 5000) &> results/timing_Gsmax_1.1_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.5 2 5000) &> results/timing_GCL_1.5_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.5 2 5000) &> results/timing_SI_1.5_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.5 2 5000) &> results/timing_SD_1.5_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.5 2 5000) &> results/timing_EA_1.5_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.5 2 5000) &> results/timing_Gsmax_1.5_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   2 2 5000) &> results/timing_GCL_2_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    2 2 5000) &> results/timing_SI_2_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    2 2 5000) &> results/timing_SD_2_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    2 2 5000) &> results/timing_EA_2_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 2 2 5000) &> results/timing_Gsmax_2_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   5 2 5000) &> results/timing_GCL_5_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    5 2 5000) &> results/timing_SI_5_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    5 2 5000) &> results/timing_SD_5_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    5 2 5000) &> results/timing_EA_5_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 5 2 5000) &> results/timing_Gsmax_5_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   10 2 5000) &> results/timing_GCL_10_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    10 2 5000) &> results/timing_SI_10_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    10 2 5000) &> results/timing_SD_10_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    10 2 5000) &> results/timing_EA_10_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 10 2 5000) &> results/timing_Gsmax_10_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   20 2 5000) &> results/timing_GCL_20_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    20 2 5000) &> results/timing_SI_20_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    20 2 5000) &> results/timing_SD_20_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    20 2 5000) &> results/timing_EA_20_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 20 2 5000) &> results/timing_Gsmax_20_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   50 2 5000) &> results/timing_GCL_50_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    50 2 5000) &> results/timing_SI_50_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    50 2 5000) &> results/timing_SD_50_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    50 2 5000) &> results/timing_EA_50_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 50 2 5000) &> results/timing_Gsmax_50_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   100 2 5000) &> results/timing_GCL_100_2.txt
+(time /usr/bin/R < runSim.R --slave --args SI    100 2 5000) &> results/timing_SI_100_2.txt
+(time /usr/bin/R < runSim.R --slave --args SD    100 2 5000) &> results/timing_SD_100_2.txt
+(time /usr/bin/R < runSim.R --slave --args EA    100 2 5000) &> results/timing_EA_100_2.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 100 2 5000) &> results/timing_Gsmax_100_2.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.1 3 5000) &> results/timing_GCL_1.1_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.1 3 5000) &> results/timing_SI_1.1_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.1 3 5000) &> results/timing_SD_1.1_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.1 3 5000) &> results/timing_EA_1.1_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.1 3 5000) &> results/timing_Gsmax_1.1_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.5 3 5000) &> results/timing_GCL_1.5_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.5 3 5000) &> results/timing_SI_1.5_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.5 3 5000) &> results/timing_SD_1.5_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.5 3 5000) &> results/timing_EA_1.5_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.5 3 5000) &> results/timing_Gsmax_1.5_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   2 3 5000) &> results/timing_GCL_2_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    2 3 5000) &> results/timing_SI_2_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    2 3 5000) &> results/timing_SD_2_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    2 3 5000) &> results/timing_EA_2_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 2 3 5000) &> results/timing_Gsmax_2_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   5 3 5000) &> results/timing_GCL_5_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    5 3 5000) &> results/timing_SI_5_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    5 3 5000) &> results/timing_SD_5_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    5 3 5000) &> results/timing_EA_5_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 5 3 5000) &> results/timing_Gsmax_5_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   10 3 5000) &> results/timing_GCL_10_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    10 3 5000) &> results/timing_SI_10_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    10 3 5000) &> results/timing_SD_10_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    10 3 5000) &> results/timing_EA_10_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 10 3 5000) &> results/timing_Gsmax_10_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   20 3 5000) &> results/timing_GCL_20_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    20 3 5000) &> results/timing_SI_20_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    20 3 5000) &> results/timing_SD_20_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    20 3 5000) &> results/timing_EA_20_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 20 3 5000) &> results/timing_Gsmax_20_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   50 3 5000) &> results/timing_GCL_50_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    50 3 5000) &> results/timing_SI_50_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    50 3 5000) &> results/timing_SD_50_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    50 3 5000) &> results/timing_EA_50_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 50 3 5000) &> results/timing_Gsmax_50_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   100 3 5000) &> results/timing_GCL_100_3.txt
+(time /usr/bin/R < runSim.R --slave --args SI    100 3 5000) &> results/timing_SI_100_3.txt
+(time /usr/bin/R < runSim.R --slave --args SD    100 3 5000) &> results/timing_SD_100_3.txt
+(time /usr/bin/R < runSim.R --slave --args EA    100 3 5000) &> results/timing_EA_100_3.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 100 3 5000) &> results/timing_Gsmax_100_3.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.1 4 5000) &> results/timing_GCL_1.1_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.1 4 5000) &> results/timing_SI_1.1_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.1 4 5000) &> results/timing_SD_1.1_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.1 4 5000) &> results/timing_EA_1.1_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.1 4 5000) &> results/timing_Gsmax_1.1_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.5 4 5000) &> results/timing_GCL_1.5_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.5 4 5000) &> results/timing_SI_1.5_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.5 4 5000) &> results/timing_SD_1.5_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.5 4 5000) &> results/timing_EA_1.5_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.5 4 5000) &> results/timing_Gsmax_1.5_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   2 4 5000) &> results/timing_GCL_2_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    2 4 5000) &> results/timing_SI_2_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    2 4 5000) &> results/timing_SD_2_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    2 4 5000) &> results/timing_EA_2_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 2 4 5000) &> results/timing_Gsmax_2_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   5 4 5000) &> results/timing_GCL_5_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    5 4 5000) &> results/timing_SI_5_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    5 4 5000) &> results/timing_SD_5_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    5 4 5000) &> results/timing_EA_5_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 5 4 5000) &> results/timing_Gsmax_5_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   10 4 5000) &> results/timing_GCL_10_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    10 4 5000) &> results/timing_SI_10_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    10 4 5000) &> results/timing_SD_10_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    10 4 5000) &> results/timing_EA_10_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 10 4 5000) &> results/timing_Gsmax_10_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   20 4 5000) &> results/timing_GCL_20_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    20 4 5000) &> results/timing_SI_20_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    20 4 5000) &> results/timing_SD_20_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    20 4 5000) &> results/timing_EA_20_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 20 4 5000) &> results/timing_Gsmax_20_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   50 4 5000) &> results/timing_GCL_50_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    50 4 5000) &> results/timing_SI_50_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    50 4 5000) &> results/timing_SD_50_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    50 4 5000) &> results/timing_EA_50_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 50 4 5000) &> results/timing_Gsmax_50_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   100 4 5000) &> results/timing_GCL_100_4.txt
+(time /usr/bin/R < runSim.R --slave --args SI    100 4 5000) &> results/timing_SI_100_4.txt
+(time /usr/bin/R < runSim.R --slave --args SD    100 4 5000) &> results/timing_SD_100_4.txt
+(time /usr/bin/R < runSim.R --slave --args EA    100 4 5000) &> results/timing_EA_100_4.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 100 4 5000) &> results/timing_Gsmax_100_4.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.1 5 5000) &> results/timing_GCL_1.1_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.1 5 5000) &> results/timing_SI_1.1_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.1 5 5000) &> results/timing_SD_1.1_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.1 5 5000) &> results/timing_EA_1.1_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.1 5 5000) &> results/timing_Gsmax_1.1_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.5 5 5000) &> results/timing_GCL_1.5_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.5 5 5000) &> results/timing_SI_1.5_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.5 5 5000) &> results/timing_SD_1.5_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.5 5 5000) &> results/timing_EA_1.5_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.5 5 5000) &> results/timing_Gsmax_1.5_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   2 5 5000) &> results/timing_GCL_2_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    2 5 5000) &> results/timing_SI_2_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    2 5 5000) &> results/timing_SD_2_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    2 5 5000) &> results/timing_EA_2_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 2 5 5000) &> results/timing_Gsmax_2_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   5 5 5000) &> results/timing_GCL_5_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    5 5 5000) &> results/timing_SI_5_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    5 5 5000) &> results/timing_SD_5_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    5 5 5000) &> results/timing_EA_5_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 5 5 5000) &> results/timing_Gsmax_5_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   10 5 5000) &> results/timing_GCL_10_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    10 5 5000) &> results/timing_SI_10_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    10 5 5000) &> results/timing_SD_10_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    10 5 5000) &> results/timing_EA_10_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 10 5 5000) &> results/timing_Gsmax_10_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   20 5 5000) &> results/timing_GCL_20_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    20 5 5000) &> results/timing_SI_20_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    20 5 5000) &> results/timing_SD_20_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    20 5 5000) &> results/timing_EA_20_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 20 5 5000) &> results/timing_Gsmax_20_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   50 5 5000) &> results/timing_GCL_50_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    50 5 5000) &> results/timing_SI_50_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    50 5 5000) &> results/timing_SD_50_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    50 5 5000) &> results/timing_EA_50_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 50 5 5000) &> results/timing_Gsmax_50_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   100 5 5000) &> results/timing_GCL_100_5.txt
+(time /usr/bin/R < runSim.R --slave --args SI    100 5 5000) &> results/timing_SI_100_5.txt
+(time /usr/bin/R < runSim.R --slave --args SD    100 5 5000) &> results/timing_SD_100_5.txt
+(time /usr/bin/R < runSim.R --slave --args EA    100 5 5000) &> results/timing_EA_100_5.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 100 5 5000) &> results/timing_Gsmax_100_5.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.1 6 5000) &> results/timing_GCL_1.1_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.1 6 5000) &> results/timing_SI_1.1_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.1 6 5000) &> results/timing_SD_1.1_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.1 6 5000) &> results/timing_EA_1.1_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.1 6 5000) &> results/timing_Gsmax_1.1_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   1.5 6 5000) &> results/timing_GCL_1.5_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    1.5 6 5000) &> results/timing_SI_1.5_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    1.5 6 5000) &> results/timing_SD_1.5_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    1.5 6 5000) &> results/timing_EA_1.5_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 1.5 6 5000) &> results/timing_Gsmax_1.5_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   2 6 5000) &> results/timing_GCL_2_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    2 6 5000) &> results/timing_SI_2_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    2 6 5000) &> results/timing_SD_2_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    2 6 5000) &> results/timing_EA_2_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 2 6 5000) &> results/timing_Gsmax_2_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   5 6 5000) &> results/timing_GCL_5_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    5 6 5000) &> results/timing_SI_5_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    5 6 5000) &> results/timing_SD_5_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    5 6 5000) &> results/timing_EA_5_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 5 6 5000) &> results/timing_Gsmax_5_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   10 6 5000) &> results/timing_GCL_10_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    10 6 5000) &> results/timing_SI_10_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    10 6 5000) &> results/timing_SD_10_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    10 6 5000) &> results/timing_EA_10_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 10 6 5000) &> results/timing_Gsmax_10_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   20 6 5000) &> results/timing_GCL_20_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    20 6 5000) &> results/timing_SI_20_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    20 6 5000) &> results/timing_SD_20_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    20 6 5000) &> results/timing_EA_20_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 20 6 5000) &> results/timing_Gsmax_20_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   50 6 5000) &> results/timing_GCL_50_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    50 6 5000) &> results/timing_SI_50_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    50 6 5000) &> results/timing_SD_50_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    50 6 5000) &> results/timing_EA_50_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 50 6 5000) &> results/timing_Gsmax_50_6.txt
+
+(time /usr/bin/R < runSim.R --slave --args GCL   100 6 5000) &> results/timing_GCL_100_6.txt
+(time /usr/bin/R < runSim.R --slave --args SI    100 6 5000) &> results/timing_SI_100_6.txt
+(time /usr/bin/R < runSim.R --slave --args SD    100 6 5000) &> results/timing_SD_100_6.txt
+(time /usr/bin/R < runSim.R --slave --args EA    100 6 5000) &> results/timing_EA_100_6.txt
+(time /usr/bin/R < runSim.R --slave --args Gsmax 100 6 5000) &> results/timing_Gsmax_100_6.txt
+

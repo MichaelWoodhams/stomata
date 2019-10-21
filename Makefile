@@ -1,19 +1,23 @@
+# When installing the R library, builds will be done using R library
+# default build rules. This Makefile is just to build the 'debug'
+# test program, suitable for singlestepping with a debugger.
+# It is quick and simple rather than carefully crafted to allow for
+# future expansion.
+
 FC = f95
-#FCFLAGS = -O0 -g -fbounds-check
-FCFLAGS = -O0 -g 
-PROGRAMS = debug
-RLIBS = tree_climb.so
+FCFLAGS = -O0 -g -fbounds-check
+PROGRAM = debug_tree_climb
+SRCDIR = fasttree2019/src
+LIB = $(SRCDIR)/fasttree2019.so
+LIBSOURCE = $(SRCDIR)/fasttree2019.f95
 
-all: $(PROGRAMS) $(RLIBS)
+all: $(LIB) $(PROGRAM) 
 
-debug: tree_climb.o
+$(PROGRAM): $(PROGRAM).f95 $(LIB)
+	$(FC) $(FCFLAGS) $^ -o $(PROGRAM)
 
-%: %.o
-	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS)
-%.o: %.f90
-	$(FC) $(FCFLAGS) -c $<
-.PHONY: clean
 clean:
-	rm -f *.o *.so *~ $(PROGRAMS)
-%.so: %.f90
-	R CMD SHLIB tree_climb.f90
+	rm -f $(SRCDIR)/*.o $(SRCDIR)/*.so $(PROGRAM)
+
+$(LIB): $(LIBSOURCE)
+	R CMD SHLIB $(LIBSOURCE)

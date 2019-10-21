@@ -58,7 +58,7 @@
 !     'place'=1 means we are on the leftmost branch extant at 'event'.
 ! trait, double: the current value of the randomly drifting trait
 ! sigma, double: variance/time of trait
-! theta, double: OU parameter, strength of attraction of 0
+! alpha, double: OU parameter, strength of attraction of 0
 ! time_in, double: How far along current edge we are in 'clock' time?
 ! sumtime, double: ? cumulative time along this branch?
 
@@ -71,11 +71,11 @@
 !  trait: the value to be updated (value of variable changes)
 !  deltat: time period between old and updated trait
 !  sigma: random drift speed
-!  theta: OU process parameter. High theta means values decay quickly towards 0
+!  alpha: OU process parameter. High alpha means values decay quickly towards 0
 
-subroutine update_trait(trait, deltat, sigma, theta)
+subroutine update_trait(trait, deltat, sigma, alpha)
   double precision, intent(INOUT) :: trait
-  double precision, intent(IN) :: deltat, sigma, theta
+  double precision, intent(IN) :: deltat, sigma, alpha
   double precision, parameter :: pi = 3.1415926535879
   double precision :: rand_var, rand1, rand2
   
@@ -86,17 +86,17 @@ subroutine update_trait(trait, deltat, sigma, theta)
   call random_number(rand2)
   rand_var=sqrt(-2.0*log(rand1))*cos(2.0*pi*rand2)
 
-  if (theta==0) then
-    ! For theta=0, OU process becomes just Brownian motion
+  if (alpha==0) then
+    ! For alpha=0, OU process becomes just Brownian motion
     trait = trait + sigma * sqrt(deltat) * rand_var
  else
     ! Ornstein-Uhlenbeck process value x at time t
     ! given value was x' at (earlier) time t' is normally distributed
-    ! with mean x' exp(-theta(t-t')) and variance
-    ! sigma^2/(2 theta)(1-exp(-2 theta(t-t')))
+    ! with mean x' exp(-alpha(t-t')) and variance
+    ! sigma^2/(2 alpha)(1-exp(-2 alpha(t-t')))
     ! Here x' - old 'trait' value, t-t' = deltat.
-    trait = trait*exp(-theta*deltat) + &
-            sigma*sqrt((1-exp(-2*theta*deltat))/(2*theta))*rand_var
+    trait = trait*exp(-alpha*deltat) + &
+            sigma*sqrt((1-exp(-2*alpha*deltat))/(2*alpha))*rand_var
  endif
 end subroutine update_trait
 
@@ -108,7 +108,7 @@ end subroutine update_trait
 
 subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
      place, finalUpdate, n_events, times, n_samples, maxLeaves, &
-     preSampleEvent, time_E_to_S, sigma, theta, debug)
+     preSampleEvent, time_E_to_S, sigma, alpha, debug)
 
   implicit none
   double precision, intent(INOUT) :: trait, timeBehind, samples(maxLeaves,n_samples)
@@ -119,7 +119,7 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
   ! And the invariant stuff passed everywhere
   
   integer, intent(IN) :: n_events, n_samples, maxLeaves, preSampleEvent(n_samples)
-  double precision, intent(IN) :: times(n_events), time_E_to_S(n_samples), sigma, theta
+  double precision, intent(IN) :: times(n_events), time_E_to_S(n_samples), sigma, alpha
   ! Local variables
   double precision :: time_in
 
@@ -136,7 +136,7 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
                 " for sample ",nextSample," after event=",event-1," place=",place               
                 
         endif
-        call update_trait(trait, timeBehind+time_E_to_S(nextSample)-time_in, sigma, theta)
+        call update_trait(trait, timeBehind+time_E_to_S(nextSample)-time_in, sigma, alpha)
         timeBehind=0
         ! time_in is how far into this time step we've advanced the value of
         ! 'trait'. 
@@ -154,7 +154,7 @@ subroutine advance_trait(trait, timeBehind, nextSample, samples, event, &
         print '(A,F8.4,A,I5,A,I5)', "Advancing time by ",timeBehind,&
              " for end of branch at event=",event," place=",place
      endif
-     call update_trait(trait, timeBehind, sigma, theta)
+     call update_trait(trait, timeBehind, sigma, alpha)
      timeBehind = 0
   end if
 end subroutine advance_trait
@@ -166,7 +166,7 @@ end subroutine advance_trait
 recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
      preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
-     theta, nextSample, debug)
+     alpha, nextSample, debug)
 
   implicit none
   logical, intent(IN) :: debug
@@ -179,7 +179,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
   integer, intent(INOUT) :: nextSample, thisEdge, place 
   integer, dimension(n + n_events - 2, 2), intent(INOUT) :: edge
 
-  double precision, intent(IN) :: sigma, theta
+  double precision, intent(IN) :: sigma, alpha
   double precision, dimension(n_events), intent(IN) :: times
   double precision, dimension(n_samples), intent(IN) :: time_E_to_S
 
@@ -210,7 +210,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
   do while (place .ne. changer(newevent) .and. newevent .ne. n_events)
      call advance_trait(trait, timeBehind, nextSample, samples, newevent, &
           place, .false., n_events, times, n_samples, maxLeaves, &
-          preSampleEvent, time_E_to_S, sigma, theta, debug)
+          preSampleEvent, time_E_to_S, sigma, alpha, debug)
      if (changer(newevent) < place) place = place + changes(newevent)
      newevent = newevent+1
   end do
@@ -218,7 +218,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
   ! Update trait with any remaining time:
   call advance_trait(trait, timeBehind, nextSample, samples, newevent, &
        place, .true., n_events, times, n_samples, maxLeaves, preSampleEvent, &
-       time_E_to_S, sigma, theta, debug)
+       time_E_to_S, sigma, alpha, debug)
 
   ! Update edge info: edge length, trait value at end.
   edge_length(thisEdge) = sum(times((event + 1):newevent)) 
@@ -251,7 +251,7 @@ recursive subroutine do_subtree(place, n, n_events, changes, changer, nodes, &
       call tree_climb(n, n_events, changes, changer, nodes, times, &
            newevent, thisEdge, edge, edge_length, edge_trait, n_samples, &
            preSampleEvent, maxLeaves, time_E_to_S, samples, tmptrait, &
-           sigma, theta, tmpnextSample, 0, debug)
+           sigma, alpha, tmpnextSample, 0, debug)
    else
       ! extinction event. Nothing need doing except debug output.
       if (debug) then
@@ -274,7 +274,7 @@ end subroutine do_subtree
 recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
      preSampleEvent, maxLeaves, time_E_to_S, samples, baseTrait, sigma, &
-     theta, baseNextSample, rngseed, debug)
+     alpha, baseNextSample, rngseed, debug)
 
   implicit none
   logical, intent(IN) :: debug
@@ -287,7 +287,7 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
        nextSample, rngseed
   integer, dimension(n + n_events - 2, 2), intent(INOUT) :: edge
 
-  double precision, intent(IN) :: sigma, theta
+  double precision, intent(IN) :: sigma, alpha
   double precision, dimension(n_events), intent(IN) :: times
   double precision, dimension(n_samples), intent(IN) :: time_E_to_S
 
@@ -322,7 +322,7 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
   call do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
      preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
-     theta, nextSample, debug)
+     alpha, nextSample, debug)
 
   nextSample = baseNextSample
   trait = baseTrait
@@ -331,6 +331,6 @@ recursive subroutine tree_climb(n, n_events, changes, changer, nodes, &
   call do_subtree(place, n, n_events, changes, changer, nodes, &
      times, event, thisEdge, edge, edge_length, edge_trait, n_samples, &
      preSampleEvent, maxLeaves, time_E_to_S, samples, trait, sigma, &
-     theta, nextSample, debug)
+     alpha, nextSample, debug)
 end subroutine
 
