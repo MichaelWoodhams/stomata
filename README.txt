@@ -19,7 +19,8 @@ OU_parameters_full_data.csv:
    data files read by runSim.R.
 
 Makefile: makes debug_tree_climb executable and (if necessary) compiles/installs
-   the fasttree2019 library.
+   the fasttree2019 library. (Only needed for debug_tree_climb - not needed to
+   compile the library.)
 debug_tree_climb: This is just a wrapper around the Fortran code in
    fasttree2019, primarily to allow running that code in a debugger.
    Usage:
