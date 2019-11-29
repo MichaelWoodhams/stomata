@@ -17,6 +17,12 @@ combine.pl: script to combine the output of many runSim.R runs into a single
 zachos_correl_and_calc_gsmax1.csv:
 OU_parameters_full_data.csv:
    data files read by runSim.R.
+OUtest.R: run comparisons between fasttree and rTrait
+OUtest.jobs: runs OUtest.R over a grid of parameters. It can be run with the
+   'parallel' tool.
+OUanalysis.R: after running OUtest.jobs, accumulates the results into a
+   summary output file CompareAll.csv.
+
 
 Makefile: makes debug_tree_climb executable and (if necessary) compiles/installs
    the fasttree2019 library. (Only needed for debug_tree_climb - not needed to

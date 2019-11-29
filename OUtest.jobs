@@ -1,0 +1,48 @@
+(time Rscript OUtest.R GCL   1.1 1000) >   ../results/compare_GCL_1.1.txt 2>&1
+(time Rscript OUtest.R SI    1.1 1000) >    ../results/compare_SI_1.1.txt 2>&1
+(time Rscript OUtest.R SD    1.1 1000) >    ../results/compare_SD_1.1.txt 2>&1
+(time Rscript OUtest.R EA    1.1 1000) >    ../results/compare_EA_1.1.txt 2>&1
+(time Rscript OUtest.R Gsmax 1.1 1000) > ../results/compare_Gsmax_1.1.txt 2>&1
+
+(time Rscript OUtest.R GCL   1.5 1000) >   ../results/compare_GCL_1.5.txt 2>&1
+(time Rscript OUtest.R SI    1.5 1000) >    ../results/compare_SI_1.5.txt 2>&1
+(time Rscript OUtest.R SD    1.5 1000) >    ../results/compare_SD_1.5.txt 2>&1
+(time Rscript OUtest.R EA    1.5 1000) >    ../results/compare_EA_1.5.txt 2>&1
+(time Rscript OUtest.R Gsmax 1.5 1000) > ../results/compare_Gsmax_1.5.txt 2>&1
+
+(time Rscript OUtest.R GCL   2 1000) >   ../results/compare_GCL_2.txt 2>&1
+(time Rscript OUtest.R SI    2 1000) >    ../results/compare_SI_2.txt 2>&1
+(time Rscript OUtest.R SD    2 1000) >    ../results/compare_SD_2.txt 2>&1
+(time Rscript OUtest.R EA    2 1000) >    ../results/compare_EA_2.txt 2>&1
+(time Rscript OUtest.R Gsmax 2 1000) > ../results/compare_Gsmax_2.txt 2>&1
+
+(time Rscript OUtest.R GCL   5 1000) >   ../results/compare_GCL_5.txt 2>&1
+(time Rscript OUtest.R SI    5 1000) >    ../results/compare_SI_5.txt 2>&1
+(time Rscript OUtest.R SD    5 1000) >    ../results/compare_SD_5.txt 2>&1
+(time Rscript OUtest.R EA    5 1000) >    ../results/compare_EA_5.txt 2>&1
+(time Rscript OUtest.R Gsmax 5 1000) > ../results/compare_Gsmax_5.txt 2>&1
+
+(time Rscript OUtest.R GCL   10 1000) >   ../results/compare_GCL_10.txt 2>&1
+(time Rscript OUtest.R SI    10 1000) >    ../results/compare_SI_10.txt 2>&1
+(time Rscript OUtest.R SD    10 1000) >    ../results/compare_SD_10.txt 2>&1
+(time Rscript OUtest.R EA    10 1000) >    ../results/compare_EA_10.txt 2>&1
+(time Rscript OUtest.R Gsmax 10 1000) > ../results/compare_Gsmax_10.txt 2>&1
+
+(time Rscript OUtest.R GCL   20 1000) >   ../results/compare_GCL_20.txt 2>&1
+(time Rscript OUtest.R SI    20 1000) >    ../results/compare_SI_20.txt 2>&1
+(time Rscript OUtest.R SD    20 1000) >    ../results/compare_SD_20.txt 2>&1
+(time Rscript OUtest.R EA    20 1000) >    ../results/compare_EA_20.txt 2>&1
+(time Rscript OUtest.R Gsmax 20 1000) > ../results/compare_Gsmax_20.txt 2>&1
+
+(time Rscript OUtest.R GCL   50 1000) >   ../results/compare_GCL_50.txt 2>&1
+(time Rscript OUtest.R SI    50 1000) >    ../results/compare_SI_50.txt 2>&1
+(time Rscript OUtest.R SD    50 1000) >    ../results/compare_SD_50.txt 2>&1
+(time Rscript OUtest.R EA    50 1000) >    ../results/compare_EA_50.txt 2>&1
+(time Rscript OUtest.R Gsmax 50 1000) > ../results/compare_Gsmax_50.txt 2>&1
+
+(time Rscript OUtest.R GCL   100 1000) >   ../results/compare_GCL_100.txt 2>&1
+(time Rscript OUtest.R SI    100 1000) >    ../results/compare_SI_100.txt 2>&1
+(time Rscript OUtest.R SD    100 1000) >    ../results/compare_SD_100.txt 2>&1
+(time Rscript OUtest.R EA    100 1000) >    ../results/compare_EA_100.txt 2>&1
+(time Rscript OUtest.R Gsmax 100 1000) > ../results/compare_Gsmax_100.txt 2>&1
+
